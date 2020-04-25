@@ -43,8 +43,8 @@ flake8:
   <<: *unit_template
   image: python:${PYTHON_VERSION}-alpine
   stage: build
-  artifacts:
-  before_script:
+  artifacts: {}
+  before_script: []
   script:
     - pip install flake8
     - flake8 *.py src tests --format=pylint
@@ -149,9 +149,9 @@ sast:
 # --------------------------------------------------------------------------
 coverage:
   <<: *unit_template
-  before_script:
-  artifacts:
-  dependencies:
+  before_script: []
+  artifacts: {}
+  dependencies: []
   image: python:${PYTHON_VERSION}-alpine
   stage: report
   script:
@@ -173,6 +173,8 @@ pypi:
 .docker-publish: &docker-publish
   stage: publish
   image: docker:latest
+  services: ['docker:dind']
+  dependencies: []
   script:
     - docker pull "${IMAGE_TAG}"
     - docker tag "${IMAGE_TAG}" "${CI_REGISTRY_IMAGE}:${IMAGE_VERSION}"
@@ -186,12 +188,10 @@ docker-latest:
   <<: *docker-publish
   variables:
     IMAGE_VERSION: latest
-  only:
-    - master
+  only: ['master']
 #
 docker-tag:
   <<: *docker-publish
   variables:
     IMAGE_VERSION: $CI_COMMIT_TAG
-  only:
-    - tags
+  only: ['tags']

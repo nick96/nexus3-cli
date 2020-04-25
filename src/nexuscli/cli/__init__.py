@@ -17,6 +17,7 @@ CONTEXT_SETTINGS = dict(
 
 logging.basicConfig(level=LOG_LEVEL)
 
+
 #############################################################################
 # root commands
 @click.group(cls=util.AliasedGroup, context_settings=CONTEXT_SETTINGS)
@@ -28,17 +29,17 @@ def nexus_cli():
 @nexus_cli.command()
 @click.option(
     '--url', '-U', default=nexus_config.DEFAULTS['url'], prompt=True,
-    help='Nexus OSS URL', show_default=True, allow_from_autoenv=True)
+    help='Nexus OSS URL', show_default=True, allow_from_autoenv=True, show_envvar=True)
 @click.option(
     '--username', '-u', default=nexus_config.DEFAULTS['username'], prompt=True,
-    help='Nexus user', show_default=True, allow_from_autoenv=True)
+    help='Nexus user', show_default=True, allow_from_autoenv=True, show_envvar=True)
 @click.option(
     '--password', '-p', prompt=True, hide_input=True,
-    help='Password for user', allow_from_autoenv=True)
+    help='Password for user', allow_from_autoenv=True, show_envvar=True)
 @click.option(
     '--x509_verify/--no-x509_verify', prompt=True,
     default=nexus_config.DEFAULTS['x509_verify'], show_default=True,
-    help='Verify server certificate', allow_from_autoenv=True)
+    help='Verify server certificate', allow_from_autoenv=True, show_envvar=True)
 def login(**kwargs):
     """
     Login to Nexus server, saving settings to ~/.nexus-cli.

@@ -2,6 +2,7 @@
 include:
   - template: Code-Quality.gitlab-ci.yml
   - template: Dependency-Scanning.gitlab-ci.yml
+  - template: License-Scanning.gitlab-ci.yml
   - template: SAST.gitlab-ci.yml
 #
 stages:
@@ -118,11 +119,13 @@ int-nexus-3.21:
 # --------------------------------------------------------------------------
 # `quality` stage
 # --------------------------------------------------------------------------
-sast:
-  stage: quality
 code_quality:
   stage: quality
 dependency_scanning:
+  stage: quality
+license_scanning:
+  stage: quality
+sast:
   stage: quality
 # --------------------------------------------------------------------------
 # `report` stage

@@ -130,6 +130,7 @@ dependency_scanning:
 coverage:
   <<: *unit_template
   before_script:
+  artifacts:
   dependencies:
   image: python:${PYTHON_VERSION}-alpine
   stage: report

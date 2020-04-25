@@ -1,12 +1,17 @@
 ---
 include:
   - template: Code-Quality.gitlab-ci.yml
+  - template: Container-Scanning.gitlab-ci.yml
   - template: Dependency-Scanning.gitlab-ci.yml
   - template: License-Scanning.gitlab-ci.yml
   - template: SAST.gitlab-ci.yml
 #
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
+#
 stages:
   - build
+  - docker-build
   - test
   - quality
   - report
@@ -53,6 +58,16 @@ package:
   artifacts:
     paths:
       - dist
+#
+docker-image:
+  image: docker:latest
+  stage: docker-build
+  services:
+    - docker:dind
+  script:
+    - docker build --pull -t $IMAGE_TAG .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $IMAGE_TAG
 # --------------------------------------------------------------------------
 # `test` stage
 # --------------------------------------------------------------------------
@@ -85,6 +100,9 @@ unit-py3.8:
     - pip3 install dist/nexus3_cli*.whl
     # don't use --upgrade; we want to test the package as installed above
     - pip3 install .[test]
+    # wait until the nexus service is ready to receive requests
+    - ./tests/wait-for-nexus.sh http://docker:8081 || exit 1
+    - nexus3 login -U http://docker:8081 --no-x509_verify -u admin -p $(docker exec nexus cat /nexus-data/admin.password)
   image: docker:latest
   services:
     - docker:dind
@@ -92,9 +110,6 @@ unit-py3.8:
   variables:
     NEXUS_VERSION: '3.19.1'
   script:
-    - cp -f tests/fixtures/dot-nexus-cli ~/.nexus-cli
-    - ./tests/wait-for-nexus.sh http://docker:8081 || exit 1
-    - nexus3 login -U http://docker:8081 --no-x509_verify -u admin -p $(docker exec nexus cat /nexus-data/admin.password)
     - pytest -m integration --junitxml=junit-integration-${NEXUS_VERSION}.xml
     - pytest -m integration
       --junitxml=junit-integration-${NEXUS_VERSION}.xml
@@ -120,6 +135,8 @@ int-nexus-3.21:
 # `quality` stage
 # --------------------------------------------------------------------------
 code_quality:
+  stage: quality
+container_scanning:
   stage: quality
 dependency_scanning:
   stage: quality
@@ -150,5 +167,31 @@ pypi:
   script:
     - pip install -U twine
     - twine upload dist/*
+  only:
+    - tags
+#
+.docker-publish: &docker-publish
+  stage: publish
+  image: docker:latest
+  script:
+    - docker pull "${IMAGE_TAG}"
+    - docker tag "${IMAGE_TAG}" "${CI_REGISTRY_IMAGE}:${IMAGE_VERSION}"
+    - docker tag "${IMAGE_TAG}" "${HUB_REGISTRY_IMAGE}:${IMAGE_VERSION}"
+    - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" "$CI_REGISTRY"
+    - docker push "${CI_REGISTRY_IMAGE}:${IMAGE_VERSION}"
+    - docker login -u "${HUB_REGISTRY_USER}" -p "${HUB_REGISTRY_PASSWORD}" "${HUB_REGISTRY}"
+    - docker push "${HUB_REGISTRY_IMAGE}:${IMAGE_VERSION}"
+#
+docker-latest:
+  <<: *docker-publish
+  variables:
+    IMAGE_VERSION: latest
+  only:
+    - master
+#
+docker-tag:
+  <<: *docker-publish
+  variables:
+    IMAGE_VERSION: $CI_COMMIT_TAG
   only:
     - tags

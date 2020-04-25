@@ -100,6 +100,9 @@ unit-py3.8:
     - pip3 install dist/nexus3_cli*.whl
     # don't use --upgrade; we want to test the package as installed above
     - pip3 install .[test]
+    # wait until the nexus service is ready to receive requests
+    - ./tests/wait-for-nexus.sh http://docker:8081 || exit 1
+    - nexus3 login -U http://docker:8081 --no-x509_verify -u admin -p $(docker exec nexus cat /nexus-data/admin.password)
   image: docker:latest
   services:
     - docker:dind
@@ -107,9 +110,6 @@ unit-py3.8:
   variables:
     NEXUS_VERSION: '3.19.1'
   script:
-    - cp -f tests/fixtures/dot-nexus-cli ~/.nexus-cli
-    - ./tests/wait-for-nexus.sh http://docker:8081 || exit 1
-    - nexus3 login -U http://docker:8081 --no-x509_verify -u admin -p $(docker exec nexus cat /nexus-data/admin.password)
     - pytest -m integration --junitxml=junit-integration-${NEXUS_VERSION}.xml
     - pytest -m integration
       --junitxml=junit-integration-${NEXUS_VERSION}.xml

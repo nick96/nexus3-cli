@@ -152,8 +152,8 @@ pytest -m 'not integration'
 ```
 
 Integration tests require a local Nexus instance listening on 8081 or as
-configured in `~/.nexus-cli`; the example configuration used for tests is in
-`tests/fixtures/dot-nexus-cli`.
+configured in `~/.nexus-cli`. The configuration file can be created using
+[nexus3 login](https://nexus3-cli.readthedocs.io/en/latest/cli.html#nexus3-login).
 
 ```bash
 docker run -d --rm -p 127.0.0.1:8081:8081 --name nexus sonatype/nexus3

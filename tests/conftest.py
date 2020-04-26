@@ -73,10 +73,15 @@ def mock_nexus_client(mocker):
 
 
 @pytest.fixture(scope='session')
-def nexus_client():
+def nexus_config():
     config = NexusConfig()
     config.load()
-    client = NexusClient(config=config)
+    return config
+
+
+@pytest.fixture(scope='session')
+def nexus_client(nexus_config):
+    client = NexusClient(config=nexus_config)
     return client
 
 

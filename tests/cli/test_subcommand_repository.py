@@ -7,14 +7,14 @@ from nexuscli.cli import nexus_cli, subcommand_repository
 
 
 def test_list(cli_runner, mocker):
-    client = mocker.patch('nexuscli.cli.subcommand_repository.util.get_client')
+    client_mock = mocker.patch('nexuscli.cli.util.get_client')
     mocker.patch('nexuscli.cli.subcommand_repository.cmd_list')
 
     result = cli_runner.invoke(nexus_cli, 'repository list')
 
     assert result.exit_code == 0
-    subcommand_repository.util.get_client.assert_called_with()
-    subcommand_repository.cmd_list.assert_called_with(client.return_value)
+    client_mock.assert_called_with()
+    subcommand_repository.cmd_list.assert_called_with(client_mock.return_value)
 
 
 @pytest.mark.parametrize(

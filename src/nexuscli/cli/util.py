@@ -2,17 +2,12 @@ import click
 import functools
 import os
 import sys
-from subprocess import CalledProcessError
+import typing
 
+from nexuscli import exception
+from nexuscli.cli import constants
 from nexuscli.nexus_client import NexusClient
 from nexuscli.nexus_config import NexusConfig
-
-
-try:
-    _, TTY_MAX_WIDTH = os.popen('stty size', 'r').read().split()
-    TTY_MAX_WIDTH = int(TTY_MAX_WIDTH)
-except (ValueError, CalledProcessError):
-    TTY_MAX_WIDTH = 80
 
 
 class AliasedGroup(click.Group):
@@ -95,13 +90,44 @@ def rename_keys(mydict: dict, rename_map: dict):
             del mydict[current_name]
 
 
+def _get_client_kwargs() -> typing.Optional[typing.Dict[str, str]]:
+    def _without_prefix(name):
+        return name[len(constants.ENV_VAR_PREFIX) + 1:].lower()
+
+    def _with_prefix(names):
+        return [f'{constants.ENV_VAR_PREFIX}_{x}' for x in names]
+
+    # This seemed an easier implementation compared to "exposing" the cli.login options to all the
+    # other commands. The part I don't love is that I have to repeat the option names here.
+    required_variables = _with_prefix(constants.REQUIRED_NEXUS_OPTIONS)
+    defined_env_vars = [x in os.environ for x in required_variables]
+
+    if any(defined_env_vars):
+        if not all(defined_env_vars):
+            errmsg = 'If any of these environment variables are set, then ALL must be set: ' \
+                     f'{required_variables}'
+            raise exception.NexusClientInvalidCredentials(errmsg)
+        else:
+            config_kwargs = {}
+            all_env_vars = required_variables + _with_prefix(constants.OPTIONAL_NEXUS_OPTIONS)
+            for env_var in all_env_vars:
+                if os.environ.get(env_var):
+                    config_kwargs[_without_prefix(env_var)] = os.environ[env_var]
+
+            return config_kwargs
+
+
 def get_client():
     """
-    Returns a Nexus Client instance. Prints a warning if a configuration file
-    isn't file.
+    Returns a Nexus Client instance. Prints a warning if the configuration file doesn't exist.
 
     :rtype: nexuscli.nexus_client.NexusClient
     """
+    maybe_config = _get_client_kwargs()
+    if maybe_config:
+        config = NexusConfig(**_get_client_kwargs())
+        return NexusClient(config=config)
+
     config = NexusConfig()
     try:
         config.load()

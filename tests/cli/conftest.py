@@ -1,10 +1,13 @@
+import nexuscli.cli.constants
+import nexuscli.cli.util
 import pytest
 import re
 
 from click.testing import CliRunner
 from faker import Faker
 
-from nexuscli import cli
+from nexuscli.cli import constants
+from nexuscli.nexus_config import NexusConfig
 
 _faker = Faker()
 
@@ -23,14 +26,31 @@ def cli_runner():
 
 
 @pytest.fixture
+def cli_runner_env(monkeypatch):
+    """As per cli_runner but uses environment variables"""
+    # nexus_config is only used as an "easy" way to read configuration into a dictionary
+    nexus_config = NexusConfig()
+    nexus_config.load()
+    config = {}
+
+    for k, v in nexus_config.to_dict.items():
+        config[f'{constants.ENV_VAR_PREFIX}_{k.upper()}'] = v
+
+    # TODO: any better spot to do this bool/str cast?
+    config['NEXUS3_X509_VERIFY'] = str(config['NEXUS3_X509_VERIFY'])
+
+    return CliRunner(env=config)
+
+
+@pytest.fixture
 def login_env(faker):
     yesno_bool = {'Yes': True, 'No': False}
 
     env = {
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_URL': faker.uri(),
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_USERNAME': faker.user_name(),
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_PASSWORD': faker.password(),
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_X509_VERIFY': faker.random_element(
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_URL': faker.uri(),
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_USERNAME': faker.user_name(),
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_PASSWORD': faker.password(),
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_X509_VERIFY': faker.random_element(
             ['Yes', 'No']),
     }
 

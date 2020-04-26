@@ -33,6 +33,9 @@ The nexus3-cli package is available on PyPi. You can install using pip/pip3:
 pip install nexus3-cli
 ```
 
+There's also a [docker image with nexus3-cli 
+pre-installed](https://gitlab.com/thiagocsf/docker-nexus3-cli).
+
 ## Usage
 
 ### Command line

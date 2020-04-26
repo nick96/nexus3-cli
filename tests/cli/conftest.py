@@ -6,6 +6,9 @@ import re
 from click.testing import CliRunner
 from faker import Faker
 
+from nexuscli.cli import constants
+from nexuscli.nexus_config import NexusConfig
+
 _faker = Faker()
 
 
@@ -20,6 +23,23 @@ def repo_name(basename, *args):
 @pytest.fixture(scope='session')
 def cli_runner():
     return CliRunner()
+
+
+@pytest.fixture
+def cli_runner_env(monkeypatch):
+    """As per cli_runner but uses environment variables"""
+    # nexus_config is only used as an "easy" way to read configuration into a dictionary
+    nexus_config = NexusConfig()
+    nexus_config.load()
+    config = {}
+
+    for k, v in nexus_config.to_dict.items():
+        config[f'{constants.ENV_VAR_PREFIX}_{k.upper()}'] = v
+
+    # TODO: any better spot to do this bool/str cast?
+    config['NEXUS3_X509_VERIFY'] = str(config['NEXUS3_X509_VERIFY'])
+
+    return CliRunner(env=config)
 
 
 @pytest.fixture

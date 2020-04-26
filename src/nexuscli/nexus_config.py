@@ -108,7 +108,8 @@ class NexusConfig:
         """
         return self._config_path
 
-    # TODO: deprecate this; it's usually not needed and, if it is, one can always use str(config_path)
+    # TODO: deprecate this; it's usually not needed and, if it is, one can always use
+    #  str(config_path)
     @property
     def config_file(self):
         """

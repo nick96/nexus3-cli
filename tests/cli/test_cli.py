@@ -22,6 +22,13 @@ def test_login(cli_runner, mocker, login_env, tmp_path, faker):
     assert xconfig_path.with_suffix('.env').exists()
 
 
+@pytest.mark.integration
+def test_login_envs(cli_runner_env):
+    # any command that requires authentication will do
+    result = cli_runner_env.invoke(nexus_cli, 'repository list')
+    assert result.exit_code == exception.CliReturnCode.SUCCESS.value
+
+
 @pytest.mark.parametrize('repo_name', [
     'maven-snapshots', 'maven-central', 'nuget-group', 'maven-releases',
     'nuget-hosted'])

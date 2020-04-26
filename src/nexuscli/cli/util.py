@@ -1,18 +1,9 @@
 import click
 import functools
-import os
 import sys
-from subprocess import CalledProcessError
 
 from nexuscli.nexus_client import NexusClient
 from nexuscli.nexus_config import NexusConfig
-
-
-try:
-    _, TTY_MAX_WIDTH = os.popen('stty size', 'r').read().split()
-    TTY_MAX_WIDTH = int(TTY_MAX_WIDTH)
-except (ValueError, CalledProcessError):
-    TTY_MAX_WIDTH = 80
 
 
 class AliasedGroup(click.Group):

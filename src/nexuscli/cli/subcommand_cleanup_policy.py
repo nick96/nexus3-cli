@@ -2,7 +2,7 @@ from texttable import Texttable
 
 from nexuscli import exception
 from nexuscli.api import cleanup_policy
-from nexuscli.cli import util
+from nexuscli.cli import constants
 
 
 def cmd_list(nexus_client):
@@ -11,7 +11,7 @@ def cmd_list(nexus_client):
     if len(policies) == 0:
         return exception.CliReturnCode.POLICY_NOT_FOUND.value
 
-    table = Texttable(max_width=util.TTY_MAX_WIDTH)
+    table = Texttable(max_width=constants.TTY_MAX_WIDTH)
     table.add_row(
         ['Name', 'Format', 'Downloaded', 'Updated', 'Regex'])
     table.set_deco(Texttable.HEADER)

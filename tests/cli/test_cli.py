@@ -5,15 +5,21 @@ from nexuscli.cli import nexus_cli
 from nexuscli import exception
 
 
-def test_login(cli_runner, mocker, login_env):
-    """Ensure it calls the expected method"""
+def test_login(cli_runner, mocker, login_env, tmp_path, faker):
+    """Ensure the method creates the expected configuration files"""
     env, xargs = login_env
-    mock_cmd_login = mocker.patch('nexuscli.cli.root_commands.cmd_login')
+    xconfig_path = tmp_path / faker.file_name()
+
+    mocker.patch('nexuscli.nexus_client.NexusClient.repositories')
+    mocker.patch('nexuscli.nexus_client.NexusConfig.config_path',
+                 new_callable=mocker.PropertyMock,
+                 return_value=xconfig_path)
 
     result = cli_runner.invoke(nexus_cli, 'login', env=env)
 
     assert result.exit_code == 0
-    mock_cmd_login.assert_called_with(**xargs)
+    assert xconfig_path.exists()
+    assert xconfig_path.with_suffix('.env').exists()
 
 
 @pytest.mark.parametrize('repo_name', [

@@ -1,5 +1,8 @@
 import json
+import typing
+from contextlib import contextmanager
 from pathlib import Path
+
 
 DEFAULT_CONFIG = str(Path.home().joinpath('.nexus-cli').absolute())
 
@@ -98,6 +101,15 @@ class NexusConfig:
         return self._x509_verify
 
     @property
+    def config_path(self) -> Path:
+        """
+        Path to configuration file, as given by ``config_path`` during
+        instantiation.
+        """
+        return self._config_path
+
+    # TODO: deprecate this; it's usually not needed and, if it is, one can always use str(config_path)
+    @property
     def config_file(self):
         """
         Path to configuration file, as given by ``config_path`` during
@@ -105,19 +117,45 @@ class NexusConfig:
 
         :rtype: str
         """
-        return str(self._config_path)
+        return str(self.config_path)
 
-    def dump(self):
+    @staticmethod
+    @contextmanager
+    def _open_dump(dst_path) -> typing.IO:
+        dst_path.touch(mode=0o600)
+        try:
+            with dst_path.open(mode='w+', encoding='utf-8') as fh:
+                yield fh
+        finally:
+            pass
+
+    def dump_env(self):
+        """
+        Writes the current configuration to disk under property:`config_file`.env.
+
+        If a file already exists, it will be overwritten. The permission will
+        be set to read/write to the owner only.
+
+        return: name of the file written
+        """
+        from nexuscli.cli.constants import ENV_VAR_PREFIX  # avoid circular dependency
+        with self._open_dump(self.config_path.with_suffix('.env')) as fh:
+            for k, v in sorted(self.to_dict.items()):
+                fh.write(f'{ENV_VAR_PREFIX}_{k.upper()}={v}\n')
+            return fh.name
+
+    def dump(self) -> str:
         """
         Writes the current configuration to disk under property:`config_file`.
 
         If a file already exists, it will be overwritten. The permission will
         be set to read/write to the owner only.
+
+        return: name of the file written
         """
-        self._config_path.touch(mode=0o600)
-        with self._config_path.open(mode='w+', encoding='utf-8') as fh:
-            json.dump(
-                self.to_dict, fh, ensure_ascii=False, indent=4, sort_keys=True)
+        with self._open_dump(self.config_path) as fh:
+            json.dump(self.to_dict, fh, ensure_ascii=False, indent=4, sort_keys=True)
+            return fh.name
 
     def load(self):
         """
@@ -127,7 +165,7 @@ class NexusConfig:
         The configuration file is in JSON format and expects these keys:
         ``nexus_user``, ``nexus_pass``, ``nexus_url``, ``nexus_verify``.
         """
-        with self._config_path.open(mode='r', encoding='utf-8') as fh:
+        with self.config_path.open(mode='r', encoding='utf-8') as fh:
             config = json.load(fh)
 
         for key, default_value in DEFAULTS.items():

@@ -9,9 +9,9 @@ from nexuscli.api.repository import model
 from nexuscli.cli import (
     root_commands, util, subcommand_repository,
     subcommand_cleanup_policy, subcommand_script)
+from nexuscli.cli.constants import ENV_VAR_PREFIX
 
 PACKAGE_VERSION = pkg_resources.get_distribution('nexus3-cli').version
-ENV_VAR_PREFIX = 'NEXUS3'
 CONTEXT_SETTINGS = dict(
     help_option_names=['-h', '--help'], auto_envvar_prefix=ENV_VAR_PREFIX)
 

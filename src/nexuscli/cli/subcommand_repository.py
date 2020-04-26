@@ -3,14 +3,14 @@ from texttable import Texttable
 
 from nexuscli import exception
 from nexuscli.api import repository
-from nexuscli.cli import util
+from nexuscli.cli import constants
 
 
 def cmd_list(nexus_client):
     """Performs ``nexus3 repository list``"""
     repositories = nexus_client.repositories.raw_list()
 
-    table = Texttable(max_width=util.TTY_MAX_WIDTH)
+    table = Texttable(max_width=constants.TTY_MAX_WIDTH)
     table.add_row(['Name', 'Format', 'Type', 'URL'])
     table.set_deco(Texttable.HEADER)
     for repo in repositories:

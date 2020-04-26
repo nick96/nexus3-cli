@@ -1,10 +1,10 @@
+import nexuscli.cli.constants
+import nexuscli.cli.util
 import pytest
 import re
 
 from click.testing import CliRunner
 from faker import Faker
-
-from nexuscli import cli
 
 _faker = Faker()
 
@@ -27,10 +27,10 @@ def login_env(faker):
     yesno_bool = {'Yes': True, 'No': False}
 
     env = {
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_URL': faker.uri(),
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_USERNAME': faker.user_name(),
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_PASSWORD': faker.password(),
-        f'{cli.ENV_VAR_PREFIX}_LOGIN_X509_VERIFY': faker.random_element(
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_URL': faker.uri(),
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_USERNAME': faker.user_name(),
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_PASSWORD': faker.password(),
+        f'{nexuscli.cli.constants.ENV_VAR_PREFIX}_LOGIN_X509_VERIFY': faker.random_element(
             ['Yes', 'No']),
     }
 

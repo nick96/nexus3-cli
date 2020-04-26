@@ -13,6 +13,7 @@ stages:
   - test
   - quality
   - publish
+  - trigger
 # --------------------------------------------------------------------------
 # `build` stage
 # --------------------------------------------------------------------------
@@ -150,5 +151,11 @@ pypi:
   script:
     - pip install -U twine
     - twine upload dist/*
-  only:
-    - tags
+  only: ['tags']
+#
+docker:
+  stage: trigger
+  trigger:
+    project: thiagocsf/docker-nexus3-cli
+    branch: master
+  only: ['tags']

@@ -104,6 +104,7 @@ unit-py3.8:
       --cov-report xml:coverage-integration-${NEXUS_VERSION}.xml
   dependencies:
     - package
+  except: ['tags']
 # integration tests
 int-nexus-3.19:
   <<: *integration_template
@@ -124,12 +125,15 @@ int-nexus-3.21:
 # --------------------------------------------------------------------------
 code_quality:
   stage: quality
+  except: ['tags']
 dependency_scanning:
   stage: quality
 license_scanning:
   stage: quality
+  except: ['tags']
 sast:
   stage: quality
+  except: ['tags']
 # --------------------------------------------------------------------------
 # `publish` stage
 # --------------------------------------------------------------------------
@@ -144,6 +148,7 @@ coverage:
     - pip install codecov
     - codecov
   when: always
+  except: ['tags']
 #
 pypi:
   stage: publish

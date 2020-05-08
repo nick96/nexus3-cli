@@ -125,15 +125,18 @@ int-nexus-3.21:
 # --------------------------------------------------------------------------
 code_quality:
   stage: quality
-  except: ['tags']
+  rules:
+    - if: $CI_COMMIT_BRANCH
 dependency_scanning:
   stage: quality
 license_scanning:
   stage: quality
-  except: ['tags']
+  rules:
+    - if: $CI_COMMIT_BRANCH
 sast:
   stage: quality
-  except: ['tags']
+  rules:
+    - if: $CI_COMMIT_BRANCH
 # --------------------------------------------------------------------------
 # `publish` stage
 # --------------------------------------------------------------------------

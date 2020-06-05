@@ -247,10 +247,11 @@ def hosted_raw_repo_empty(faker):
 
 
 @pytest.fixture(scope='session')
-def upload_repo(faker):
+def upload_repo():
     """
     As per hosted_raw_repo_empty but the same one for the whole test session
     """
+    faker = Faker()
     tmp_path = pathlib.Path(tempfile.TemporaryDirectory().name)
     src_dir, x_file_list = _deep_file_tree(faker, tmp_path)
     return _hosted_raw_repo_empty(faker), src_dir, x_file_list

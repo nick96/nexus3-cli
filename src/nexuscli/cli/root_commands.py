@@ -22,7 +22,7 @@ def cmd_login(**kwargs):
         # they just did now, so override the msg
         raise exception.NexusClientInvalidCredentials('Invalid credentials')
 
-    sys.stderr.write(f'\nLogin successful.\n')
+    sys.stderr.write('\nLogin successful.\n')
     sys.stderr.write(f'Configuration saved to {config.dump()}, {config.dump_env()}\n')
 
     return exception.CliReturnCode.SUCCESS.value

@@ -1,5 +1,6 @@
 import json
 import typing
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -108,8 +109,6 @@ class NexusConfig:
         """
         return self._config_path
 
-    # TODO: deprecate this; it's usually not needed and, if it is, one can always use
-    #  str(config_path)
     @property
     def config_file(self):
         """
@@ -118,6 +117,7 @@ class NexusConfig:
 
         :rtype: str
         """
+        warnings.warn('use `str(obj.config_path)` instead', DeprecationWarning)
         return str(self.config_path)
 
     @staticmethod

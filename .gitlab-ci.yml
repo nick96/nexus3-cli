@@ -95,8 +95,6 @@ unit-py3.8:
   services:
     - docker:dind
   stage: test
-  variables:
-    NEXUS_VERSION: '3.19.1'
   script:
     - pytest -m integration --junitxml=junit-integration-${NEXUS_VERSION}.xml
     - pytest -m integration
@@ -106,20 +104,20 @@ unit-py3.8:
     - package
   except: ['tags']
 # integration tests
-int-nexus-3.19:
+int-nexus-3.22:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.19.1'
+    NEXUS_VERSION: '3.22.1'
 #
-int-nexus-3.20:
+int-nexus-3.23:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.20.1'
+    NEXUS_VERSION: '3.23.0'
 #
-int-nexus-3.21:
+int-nexus-latest:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.21.2'
+    NEXUS_VERSION: 'latest'
 # --------------------------------------------------------------------------
 # `quality` stage
 # --------------------------------------------------------------------------

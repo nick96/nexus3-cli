@@ -81,7 +81,7 @@ unit-py3.8:
   before_script:
     - docker info
     # get nexus going since it takes a little while to start-up
-    - docker run -d --rm -p 8081:8081 --name nexus sonatype/nexus3:$NEXUS_VERSION
+    - docker run -d --rm -p 8081:8081 -v $(pwd)/tests/fixtures/nexus-data/etc:/nexus-data/etc --name nexus sonatype/nexus3:$NEXUS_VERSION
     # test dependencies
     - apk add bash curl py3-pip python3-dev gcc musl-dev linux-headers openssl-dev libffi-dev
     - export CFLAGS=-I/usr/include
@@ -119,7 +119,7 @@ int-nexus-3.20:
 int-nexus-3.21:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.21.1'
+    NEXUS_VERSION: '3.21.2'
 # --------------------------------------------------------------------------
 # `quality` stage
 # --------------------------------------------------------------------------

@@ -81,7 +81,7 @@ unit-py3.8:
   before_script:
     - docker info
     # get nexus going since it takes a little while to start-up
-    - docker run -d --rm -p 8081:8081 --name nexus sonatype/nexus3:$NEXUS_VERSION
+    - docker run -d --rm -p 8081:8081 -v $(pwd)/tests/fixtures/nexus-data/etc:/nexus-data/etc --name nexus sonatype/nexus3:$NEXUS_VERSION
     # test dependencies
     - apk add bash curl py3-pip python3-dev gcc musl-dev linux-headers openssl-dev libffi-dev
     - export CFLAGS=-I/usr/include
@@ -95,8 +95,6 @@ unit-py3.8:
   services:
     - docker:dind
   stage: test
-  variables:
-    NEXUS_VERSION: '3.19.1'
   script:
     - pytest -m integration --junitxml=junit-integration-${NEXUS_VERSION}.xml
     - pytest -m integration
@@ -106,20 +104,20 @@ unit-py3.8:
     - package
   except: ['tags']
 # integration tests
-int-nexus-3.19:
+int-nexus-3.22:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.19.1'
+    NEXUS_VERSION: '3.22.1'
 #
-int-nexus-3.20:
+int-nexus-3.23:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.20.1'
+    NEXUS_VERSION: '3.23.0'
 #
-int-nexus-3.21:
+int-nexus-latest:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.21.1'
+    NEXUS_VERSION: 'latest'
 # --------------------------------------------------------------------------
 # `quality` stage
 # --------------------------------------------------------------------------

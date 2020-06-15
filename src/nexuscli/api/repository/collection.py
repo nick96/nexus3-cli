@@ -4,6 +4,7 @@ import semver
 from nexuscli import exception, nexus_util
 from nexuscli.api.repository import model
 
+# TODO: determine `SCRIPT_CREATE_VERSIONS` based on the existence of a versioned .groovy script
 SCRIPT_CREATE_VERSIONS = [semver.VersionInfo(3, 21, 0)]
 SCRIPT_NAME_CREATE = 'nexus3-cli-repository-create'
 SCRIPT_NAME_DELETE = 'nexus3-cli-repository-delete'

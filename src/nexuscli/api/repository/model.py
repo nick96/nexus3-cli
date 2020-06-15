@@ -15,28 +15,10 @@ DEFAULT_STRICT_CONTENT = False
 CLEANUP_SET_MIN_VERSION = semver.VersionInfo(3, 19, 0)
 
 
-class Repository:
+class BaseRepository:
     """
-    A base Nexus repository.
+    The base class for Nexus repositories.
 
-    Nexus 3 repository recipes (formats) supported by this class:
-
-        - `bower
-          <https://help.sonatype.com/repomanager3/formats/bower-repositories>`_
-        - `npm
-          <https://help.sonatype.com/repomanager3/formats/npm-registry>`_
-        - `nuget
-          <https://help.sonatype.com/repomanager3/formats/nuget-repositories>`_
-        - `pypi
-          <https://help.sonatype.com/repomanager3/formats/pypi-repositories>`_
-        - `raw
-          <https://help.sonatype.com/repomanager3/formats/raw-repositories>`_
-        - `rubygems
-          <https://help.sonatype.com/repomanager3/formats/rubygems-repositories>`_
-        - `docker
-          <https://help.sonatype.com/repomanager3/formats/docker-registry>`_
-        - `apt
-          <https://help.sonatype.com/repomanager3/formats/apt-repositories>`_
     :param name: name of the repository.
     :type name: str
     :param nexus_client: the :class:`~nexuscli.nexus_client.NexusClient`
@@ -53,18 +35,8 @@ class Repository:
     :param strict_content_type_validation: Whether to validate file
         extension against its content type.
     :type strict_content_type_validation: bool
-    :param cleanup_policy: name of an existing repository clean-up policy.
-    :type cleanup_policy: str
     """
-
-    RECIPES = (
-        'bower',
-        'npm',
-        'nuget',
-        'pypi',
-        'raw',
-        'rubygems',
-    )
+    RECIPES = ()
     TYPE = None
 
     def __init__(self, name,
@@ -72,7 +44,6 @@ class Repository:
                  recipe=DEFAULT_RECIPE,
                  blob_store_name=DEFAULT_BLOB_STORE_NAME,
                  strict_content_type_validation=DEFAULT_STRICT_CONTENT,
-                 cleanup_policy=None
                  ):
         self.name = name
         self.nexus_client = nexus_client
@@ -81,7 +52,6 @@ class Repository:
         self.recipe = recipe.lower()
         self.blob_store_name = blob_store_name
         self.strict_content = strict_content_type_validation
-        self._cleanup_policy = cleanup_policy
 
         self.__validate_params()
 
@@ -102,28 +72,6 @@ class Repository:
             return 'maven2'
 
         return self.recipe
-
-    def _cleanup_uses_set(self):
-        # In case Sonatype changes the version string format, default to the
-        # new behaviour as there should be more people using newer versions
-        if self.nexus_client.server_version is None:
-            return True
-
-        # When the breaking API change was introduced
-        if self.nexus_client.server_version >= CLEANUP_SET_MIN_VERSION:
-            return True
-
-        return False
-
-    @property
-    def cleanup_policy(self):
-        """
-        Groovy-formatted value for the cleanup/policy attribute.
-        """
-        if self._cleanup_uses_set():
-            return [self._cleanup_policy]
-        else:
-            return self._cleanup_policy
 
     @property
     def configuration(self):
@@ -177,6 +125,85 @@ class Repository:
                 'policyName': self.cleanup_policy}
 
         return repo_config
+
+
+class Repository(BaseRepository):
+    """
+    Representation of the simplest Nexus repositories.
+
+    Nexus 3 repository recipes (formats) supported by this class:
+
+        - `bower
+          <https://help.sonatype.com/repomanager3/formats/bower-repositories>`_
+        - `npm
+          <https://help.sonatype.com/repomanager3/formats/npm-registry>`_
+        - `nuget
+          <https://help.sonatype.com/repomanager3/formats/nuget-repositories>`_
+        - `pypi
+          <https://help.sonatype.com/repomanager3/formats/pypi-repositories>`_
+        - `raw
+          <https://help.sonatype.com/repomanager3/formats/raw-repositories>`_
+        - `rubygems
+          <https://help.sonatype.com/repomanager3/formats/rubygems-repositories>`_
+        - `docker
+          <https://help.sonatype.com/repomanager3/formats/docker-registry>`_
+        - `apt
+          <https://help.sonatype.com/repomanager3/formats/apt-repositories>`_
+    :param name: name of the repository.
+    :type name: str
+    :param nexus_client: the :class:`~nexuscli.nexus_client.NexusClient`
+        instance that will be used to perform operations against the Nexus 3
+        service. You must provide this at instantiation or set it before
+        calling any methods that require connectivity to Nexus.
+    :type nexus_client: nexuscli.nexus_client.NexusClient
+    :param recipe: format (recipe) of the new repository. Must be one of
+        :py:attr:`RECIPES`. See Nexus documentation for details.
+    :type recipe: str
+    :param blob_store_name: name of an existing blob store; 'default'
+        should work on most installations.
+    :type blob_store_name: str
+    :param strict_content_type_validation: Whether to validate file
+        extension against its content type.
+    :type strict_content_type_validation: bool
+    :param cleanup_policy: name of an existing repository clean-up policy.
+    :type cleanup_policy: str
+    """
+
+    RECIPES = (
+        'bower',
+        'npm',
+        'nuget',
+        'pypi',
+        'raw',
+        'rubygems',
+    )
+    TYPE = None
+
+    def __init__(self, name, cleanup_policy=None, **kwargs):
+        super().__init__(name, **kwargs)
+        self._cleanup_policy = cleanup_policy
+
+    def _cleanup_uses_set(self):
+        # In case Sonatype changes the version string format, default to the
+        # new behaviour as there should be more people using newer versions
+        if self.nexus_client.server_version is None:
+            return True
+
+        # When the breaking API change was introduced
+        if self.nexus_client.server_version >= CLEANUP_SET_MIN_VERSION:
+            return True
+
+        return False
+
+    @property
+    def cleanup_policy(self):
+        """
+        Groovy-formatted value for the cleanup/policy attribute.
+        """
+        if self._cleanup_uses_set():
+            return [self._cleanup_policy]
+        else:
+            return self._cleanup_policy
 
 
 class ProxyRepository(Repository):
@@ -371,6 +398,39 @@ class HostedRepository(Repository):
         return file_count
 
 
+class GroupRepository(Repository):
+    """
+    A group Nexus repository.
+
+    :param name: name of the repository.
+    :type name: str
+    :param member_names: ordered name of repositories in the group
+    :type member_names: list
+    :param kwargs: see :class:`Repository`
+    """
+    RECIPES = Repository.RECIPES
+    TYPE = 'group'
+
+    def __init__(self, name, member_names=None, **kwargs):
+        super().__init__(name, **kwargs)
+        self.member_names = member_names or []
+
+    @property
+    def configuration(self):
+        """
+        As per :py:obj:`Repository.configuration` but specific to this
+        repository recipe and type.
+
+        :rtype: str
+        """
+        repo_config = super().configuration
+        repo_config['attributes']['group'] = {
+            'memberNames': self.member_names,
+        }
+
+        return repo_config
+
+
 class MavenRepository(Repository):
     """
     A base `Maven
@@ -508,11 +568,19 @@ class YumProxyRepository(ProxyRepository, YumRepository):
 
 
 # For the convenience of not having to handle these recipe names differently
+class BowerGroupRepository(GroupRepository):
+    pass
+
+
 class BowerHostedRepository(HostedRepository):
     pass
 
 
 class BowerProxyRepository(ProxyRepository):
+    pass
+
+
+class NpmGroupRepository(GroupRepository):
     pass
 
 
@@ -524,11 +592,19 @@ class NpmProxyRepository(ProxyRepository):
     pass
 
 
+class NugetGroupRepository(GroupRepository):
+    pass
+
+
 class NugetHostedRepository(HostedRepository):
     pass
 
 
 class NugetProxyRepository(ProxyRepository):
+    pass
+
+
+class PypiGroupRepository(GroupRepository):
     pass
 
 
@@ -540,11 +616,19 @@ class PypiProxyRepository(ProxyRepository):
     pass
 
 
+class RawGroupRepository(GroupRepository):
+    pass
+
+
 class RawHostedRepository(HostedRepository):
     pass
 
 
 class RawProxyRepository(ProxyRepository):
+    pass
+
+
+class RubygemsGroupRepository(GroupRepository):
     pass
 
 
@@ -721,14 +805,14 @@ class AptProxyRepository(AptRepository, ProxyRepository):
 __all__ = [
     Repository, HostedRepository, ProxyRepository,
     AptHostedRepository, AptProxyRepository,
-    BowerHostedRepository, BowerProxyRepository,
+    BowerGroupRepository, BowerHostedRepository, BowerProxyRepository,
     DockerHostedRepository, DockerProxyRepository,
     MavenHostedRepository, MavenProxyRepository,
-    NpmHostedRepository, NpmProxyRepository,
-    NugetHostedRepository, NugetProxyRepository,
-    PypiHostedRepository, PypiProxyRepository,
-    RawHostedRepository, RawProxyRepository,
-    RubygemsHostedRepository, RubygemsProxyRepository,
+    NpmGroupRepository, NpmHostedRepository, NpmProxyRepository,
+    NugetGroupRepository, NugetHostedRepository, NugetProxyRepository,
+    PypiGroupRepository, PypiHostedRepository, PypiProxyRepository,
+    RawGroupRepository, RawHostedRepository, RawProxyRepository,
+    RubygemsGroupRepository, RubygemsHostedRepository, RubygemsProxyRepository,
     YumHostedRepository, YumProxyRepository,
 ]
 

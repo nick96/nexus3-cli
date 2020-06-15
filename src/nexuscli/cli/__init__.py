@@ -7,7 +7,7 @@ from nexuscli import (
     nexus_config)
 from nexuscli.api.repository import model
 from nexuscli.cli import (
-    root_commands, util, subcommand_repository,
+    repository_options, root_commands, util, subcommand_repository,
     subcommand_cleanup_policy, subcommand_script)
 from nexuscli.cli.constants import ENV_VAR_PREFIX
 
@@ -160,6 +160,52 @@ def repository_create():
     pass
 
 
+def _create_repository(ctx, repo_type, **kwargs):
+    # every repository recipe needs these
+    kwargs['recipe'] = ctx.info_name
+    util.upcase_values(
+        kwargs, ['index_type', 'layout_policy', 'version_policy', 'write_policy'])
+
+    # these CLI options were shortened for user convenience; fix them now
+    util.rename_keys(kwargs, {
+        'negative_cache': 'negative_cache_enabled',
+        'strict_content': 'strict_content_type_validation',
+        'trust_store': 'use_trust_store_for_index_access',
+    })
+
+    subcommand_repository.cmd_create(ctx, repo_type=repo_type, **kwargs)
+
+
+#############################################################################
+# repository create group sub-commands
+@repository_create.command(
+    name='group',
+    cls=util.mapped_commands({
+        # 'apt': Nexus doesn't support it
+        'docker': model.DockerHostedRepository.RECIPES,
+        'maven': model.MavenHostedRepository.RECIPES,
+        'yum': model.YumHostedRepository.RECIPES,
+        # generic, remaining repositories
+        'recipe': model.HostedRepository.RECIPES,
+    }))
+def repository_create_group():
+    """
+    Create a group repository.
+    """
+    pass
+
+
+@repository_create_group.command(name='recipe')
+@util.add_options(repository_options.COMMON)
+@click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group')
+@util.with_nexus_client
+def repository_create_group_recipe(ctx: click.Context, **kwargs):
+    """
+    Create a group repository.
+    """
+    _create_repository(ctx, 'group', **kwargs)
+
+
 #############################################################################
 # repository create hosted sub-commands
 @repository_create.command(
@@ -179,43 +225,8 @@ def repository_create_hosted():
     pass
 
 
-def _create_repository(ctx, repo_type, **kwargs):
-    # every repository recipe needs these
-    kwargs['recipe'] = ctx.info_name
-    util.upcase_values(
-        kwargs, ['index_type', 'layout_policy', 'version_policy',
-                 'write_policy'])
-
-    # these CLI options were shortened for user convenience; fix them now
-    util.rename_keys(kwargs, {
-        'negative_cache': 'negative_cache_enabled',
-        'strict_content': 'strict_content_type_validation',
-        'trust_store': 'use_trust_store_for_index_access',
-    })
-
-    subcommand_repository.cmd_create(ctx, repo_type=repo_type, **kwargs)
-
-
-REPOSITORY_COMMON_OPTIONS = [
-    click.argument('repository-name'),
-    click.option('--blob-store-name', default='default',
-                 help='Blobstore name to use with new repository'),
-    click.option('--strict-content/--no-strict-content', default=False,
-                 help='Toggle strict content type validation'),
-    click.option('--cleanup-policy',
-                 help='Name of existing clean-up policy to use'),
-]
-
-REPOSITORY_COMMON_HOSTED_OPTIONS = REPOSITORY_COMMON_OPTIONS + [
-    click.option(
-        '--write-policy', help='Write policy to use', default='allow',
-        type=click.Choice(['allow', 'allow_once', 'deny'],
-                          case_sensitive=False))
-]
-
-
 @repository_create_hosted.command(name='recipe')
-@util.add_options(REPOSITORY_COMMON_HOSTED_OPTIONS)
+@util.add_options(repository_options.HOSTED)
 @util.with_nexus_client
 def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
     """
@@ -224,16 +235,9 @@ def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-REPOSITORY_COMMON_APT_OPTIONS = [
-    click.option(
-        '--distribution', required=True,
-        help='Distribution to fetch; e.g.: bionic')
-]
-
-
 @repository_create_hosted.command(name='apt')
-@util.add_options(REPOSITORY_COMMON_HOSTED_OPTIONS)
-@util.add_options(REPOSITORY_COMMON_APT_OPTIONS)
+@util.add_options(repository_options.HOSTED)
+@util.add_options(repository_options.APT)
 @click.option(
     '--gpg-keypair', required=True, type=click.File(),
     default='./private.gpg.key', help='Path to GPG signing key')
@@ -247,23 +251,9 @@ def repository_create_hosted_apt(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-REPOSITORY_COMMON_DOCKER_OPTIONS = [
-    click.option(
-        '--v1-enabled/--no-v1-enabled', default=False,
-        help='Enable v1 registry'),
-    click.option(
-        '--force-basic-auth/--no-force-basic-auth', default=False,
-        help='Force use of basic authentication'),
-    click.option(
-        '--http-port', type=click.INT, help='Port for HTTP service'),
-    click.option(
-        '--https-port', type=click.INT, help='Port for HTTPS service'),
-]
-
-
 @repository_create_hosted.command(name='docker')
-@util.add_options(REPOSITORY_COMMON_HOSTED_OPTIONS)
-@util.add_options(REPOSITORY_COMMON_DOCKER_OPTIONS)
+@util.add_options(repository_options.HOSTED)
+@util.add_options(repository_options.DOCKER)
 @util.with_nexus_client
 def repository_create_hosted_docker(ctx: click.Context, **kwargs):
     """
@@ -272,21 +262,9 @@ def repository_create_hosted_docker(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-REPOSITORY_COMMON_MAVEN_OPTIONS = [
-    click.option(
-        '--version-policy', help='Version policy to use', default='release',
-        type=click.Choice(['release', 'snapshot', 'mixed'],
-                          case_sensitive=False)),
-    click.option(
-        '--layout-policy', help='Layout policy to use', default='strict',
-        type=click.Choice(['strict', 'permissive'],
-                          case_sensitive=False)),
-]
-
-
 @repository_create_hosted.command(name='maven')
-@util.add_options(REPOSITORY_COMMON_HOSTED_OPTIONS)
-@util.add_options(REPOSITORY_COMMON_MAVEN_OPTIONS)
+@util.add_options(repository_options.HOSTED)
+@util.add_options(repository_options.MAVEN)
 @util.with_nexus_client
 def repository_create_hosted_maven(ctx: click.Context, **kwargs):
     """
@@ -296,7 +274,7 @@ def repository_create_hosted_maven(ctx: click.Context, **kwargs):
 
 
 @repository_create_hosted.command(name='yum')
-@util.add_options(REPOSITORY_COMMON_HOSTED_OPTIONS)
+@util.add_options(repository_options.HOSTED)
 @click.option(
     '--depth', help='Depth where repodata folder(s) exist', default=0,
     type=click.IntRange(min=0, max=5, clamp=False))
@@ -327,34 +305,8 @@ def repository_create_proxy():
     pass
 
 
-REPOSITORY_COMMON_PROXY_OPTIONS = REPOSITORY_COMMON_OPTIONS + [
-    click.argument('remote-url'),
-    click.option(
-        '--auto-block/--no-auto-block', default=True,
-        help='Disable outbound connections on remote-url access errors'),
-    click.option(
-        '--negative-cache/--no-negative-cache', default=True,
-        help='Cache responses for content missing in the remote-url'),
-    click.option(
-        '--negative-cache-ttl', type=click.INT, default=1440,
-        help='Cache time in minutes'),
-    click.option(
-        '--content-max-age', type=click.INT, default=1440,
-        help='Maximum age of cached artefacts'),
-    click.option(
-        '--metadata-max-age', type=click.INT, default=1440,
-        help='Maximum age of cached artefacts metadata'),
-    click.option(
-        '--remote-auth-type', help='Only username is supported',
-        type=click.Choice(['username'], case_sensitive=False)),
-    # TODO: require `--remote-auth-type username` when these are specified
-    click.option('--remote-username', help='Username for remote URL'),
-    click.option('--remote-password', help='Password for remote URL'),
-]
-
-
 @repository_create_proxy.command(name='recipe')
-@util.add_options(REPOSITORY_COMMON_PROXY_OPTIONS)
+@util.add_options(repository_options.PROXY)
 @util.with_nexus_client
 def repository_create_proxy_recipe(ctx: click.Context, **kwargs):
     """
@@ -364,8 +316,8 @@ def repository_create_proxy_recipe(ctx: click.Context, **kwargs):
 
 
 @repository_create_proxy.command(name='apt')
-@util.add_options(REPOSITORY_COMMON_PROXY_OPTIONS)
-@util.add_options(REPOSITORY_COMMON_APT_OPTIONS)
+@util.add_options(repository_options.PROXY)
+@util.add_options(repository_options.APT)
 @click.option(
     '--flat/--no-flat', default=False, help='Is this repository flat?')
 @util.with_nexus_client
@@ -377,8 +329,8 @@ def repository_create_proxy_apt(ctx: click.Context, **kwargs):
 
 
 @repository_create_proxy.command(name='docker')
-@util.add_options(REPOSITORY_COMMON_PROXY_OPTIONS)
-@util.add_options(REPOSITORY_COMMON_DOCKER_OPTIONS)
+@util.add_options(repository_options.PROXY)
+@util.add_options(repository_options.DOCKER)
 @click.option(
     '--index-type', help='Docker index type', default='registry',
     type=click.Choice(['registry', 'hub', 'custom'],
@@ -397,8 +349,8 @@ def repository_create_proxy_docker(ctx: click.Context, **kwargs):
 
 
 @repository_create_proxy.command(name='maven')
-@util.add_options(REPOSITORY_COMMON_PROXY_OPTIONS)
-@util.add_options(REPOSITORY_COMMON_MAVEN_OPTIONS)
+@util.add_options(repository_options.PROXY)
+@util.add_options(repository_options.MAVEN)
 @util.with_nexus_client
 def repository_create_proxy_maven(ctx: click.Context, **kwargs):
     """
@@ -408,7 +360,7 @@ def repository_create_proxy_maven(ctx: click.Context, **kwargs):
 
 
 @repository_create_proxy.command(name='yum')
-@util.add_options(REPOSITORY_COMMON_PROXY_OPTIONS)
+@util.add_options(repository_options.PROXY)
 @util.with_nexus_client
 def repository_create_proxy_yum(ctx: click.Context, **kwargs):
     """

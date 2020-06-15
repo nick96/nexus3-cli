@@ -179,10 +179,7 @@ class Repository(BaseRepository):
     )
     TYPE = None
 
-    def __init__(self, name,
-                 cleanup_policy=None,
-                 **kwargs
-                 ):
+    def __init__(self, name, cleanup_policy=None, **kwargs):
         super().__init__(name, **kwargs)
         self._cleanup_policy = cleanup_policy
 
@@ -401,6 +398,39 @@ class HostedRepository(Repository):
         return file_count
 
 
+class GroupRepository(Repository):
+    """
+    A group Nexus repository.
+
+    :param name: name of the repository.
+    :type name: str
+    :param member_names: ordered name of repositories in the group
+    :type member_names: list
+    :param kwargs: see :class:`Repository`
+    """
+    RECIPES = Repository.RECIPES
+    TYPE = 'group'
+
+    def __init__(self, name, member_names=None, **kwargs):
+        super().__init__(name, **kwargs)
+        self.member_names = member_names or []
+
+    @property
+    def configuration(self):
+        """
+        As per :py:obj:`Repository.configuration` but specific to this
+        repository recipe and type.
+
+        :rtype: str
+        """
+        repo_config = super().configuration
+        repo_config['attributes']['group'] = {
+            'memberNames': self.member_names,
+        }
+
+        return repo_config
+
+
 class MavenRepository(Repository):
     """
     A base `Maven
@@ -538,11 +568,19 @@ class YumProxyRepository(ProxyRepository, YumRepository):
 
 
 # For the convenience of not having to handle these recipe names differently
+class BowerGroupRepository(GroupRepository):
+    pass
+
+
 class BowerHostedRepository(HostedRepository):
     pass
 
 
 class BowerProxyRepository(ProxyRepository):
+    pass
+
+
+class NpmGroupRepository(GroupRepository):
     pass
 
 
@@ -554,11 +592,19 @@ class NpmProxyRepository(ProxyRepository):
     pass
 
 
+class NugetGroupRepository(GroupRepository):
+    pass
+
+
 class NugetHostedRepository(HostedRepository):
     pass
 
 
 class NugetProxyRepository(ProxyRepository):
+    pass
+
+
+class PypiGroupRepository(GroupRepository):
     pass
 
 
@@ -570,11 +616,19 @@ class PypiProxyRepository(ProxyRepository):
     pass
 
 
+class RawGroupRepository(GroupRepository):
+    pass
+
+
 class RawHostedRepository(HostedRepository):
     pass
 
 
 class RawProxyRepository(ProxyRepository):
+    pass
+
+
+class RubygemsGroupRepository(GroupRepository):
     pass
 
 
@@ -751,14 +805,14 @@ class AptProxyRepository(AptRepository, ProxyRepository):
 __all__ = [
     Repository, HostedRepository, ProxyRepository,
     AptHostedRepository, AptProxyRepository,
-    BowerHostedRepository, BowerProxyRepository,
+    BowerGroupRepository, BowerHostedRepository, BowerProxyRepository,
     DockerHostedRepository, DockerProxyRepository,
     MavenHostedRepository, MavenProxyRepository,
-    NpmHostedRepository, NpmProxyRepository,
-    NugetHostedRepository, NugetProxyRepository,
-    PypiHostedRepository, PypiProxyRepository,
-    RawHostedRepository, RawProxyRepository,
-    RubygemsHostedRepository, RubygemsProxyRepository,
+    NpmGroupRepository, NpmHostedRepository, NpmProxyRepository,
+    NugetGroupRepository, NugetHostedRepository, NugetProxyRepository,
+    PypiGroupRepository, PypiHostedRepository, PypiProxyRepository,
+    RawGroupRepository, RawHostedRepository, RawProxyRepository,
+    RubygemsGroupRepository, RubygemsHostedRepository, RubygemsProxyRepository,
     YumHostedRepository, YumProxyRepository,
 ]
 

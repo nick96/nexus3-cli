@@ -196,17 +196,18 @@ def _create_repository(ctx, repo_type, **kwargs):
     subcommand_repository.cmd_create(ctx, repo_type=repo_type, **kwargs)
 
 
+REPOSITORY_CLEANUP_OPTION = [
+    click.option('--cleanup-policy',
+                 help='Name of existing clean-up policy to use'),
+]
 REPOSITORY_COMMON_OPTIONS = [
     click.argument('repository-name'),
     click.option('--blob-store-name', default='default',
                  help='Blobstore name to use with new repository'),
     click.option('--strict-content/--no-strict-content', default=False,
                  help='Toggle strict content type validation'),
-    click.option('--cleanup-policy',
-                 help='Name of existing clean-up policy to use'),
 ]
-
-REPOSITORY_COMMON_HOSTED_OPTIONS = REPOSITORY_COMMON_OPTIONS + [
+REPOSITORY_COMMON_HOSTED_OPTIONS = REPOSITORY_COMMON_OPTIONS + REPOSITORY_CLEANUP_OPTION + [
     click.option(
         '--write-policy', help='Write policy to use', default='allow',
         type=click.Choice(['allow', 'allow_once', 'deny'],
@@ -327,7 +328,7 @@ def repository_create_proxy():
     pass
 
 
-REPOSITORY_COMMON_PROXY_OPTIONS = REPOSITORY_COMMON_OPTIONS + [
+REPOSITORY_COMMON_PROXY_OPTIONS = REPOSITORY_COMMON_OPTIONS + REPOSITORY_CLEANUP_OPTION + [
     click.argument('remote-url'),
     click.option(
         '--auto-block/--no-auto-block', default=True,

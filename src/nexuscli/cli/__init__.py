@@ -177,6 +177,36 @@ def _create_repository(ctx, repo_type, **kwargs):
 
 
 #############################################################################
+# repository create group sub-commands
+@repository_create.command(
+    name='group',
+    cls=util.mapped_commands({
+        # 'apt': Nexus doesn't support it
+        'docker': model.DockerHostedRepository.RECIPES,
+        'maven': model.MavenHostedRepository.RECIPES,
+        'yum': model.YumHostedRepository.RECIPES,
+        # generic, remaining repositories
+        'recipe': model.HostedRepository.RECIPES,
+    }))
+def repository_create_group():
+    """
+    Create a group repository.
+    """
+    pass
+
+
+@repository_create_group.command(name='recipe')
+@util.add_options(repository_options.COMMON)
+@click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group')
+@util.with_nexus_client
+def repository_create_group_recipe(ctx: click.Context, **kwargs):
+    """
+    Create a group repository.
+    """
+    _create_repository(ctx, 'group', **kwargs)
+
+
+#############################################################################
 # repository create hosted sub-commands
 @repository_create.command(
     name='hosted',

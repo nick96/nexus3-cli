@@ -2,7 +2,7 @@ import itertools
 import pytest
 from semver import VersionInfo
 
-from nexuscli.api.repository import model
+from nexuscli.api.repository import collection, model
 
 
 @pytest.mark.parametrize(
@@ -139,6 +139,22 @@ def test_repository_configuration(
 
     if repo.TYPE and repo.TYPE == 'proxy':
         assert attributes['proxy']['remoteUrl'] == x_remote_url
+
+
+@pytest.mark.parametrize('recipe', model.GroupRepository.RECIPES)
+def test_group_repository_configuration(recipe, mock_nexus_client, faker):
+    repo_class = collection.get_repository_class({'recipeName': f'{recipe}-group'})
+    x_name = faker.word()
+    x_member_names = faker.pylist(10, True, str)
+
+    kwargs = {
+        'nexus_client': mock_nexus_client,
+        'member_names': x_member_names,
+    }
+
+    repo = repo_class(x_name, **kwargs)
+
+    assert repo.configuration['attributes']['group']['memberNames'] == x_member_names
 
 
 @pytest.mark.parametrize(

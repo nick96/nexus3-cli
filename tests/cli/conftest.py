@@ -6,6 +6,7 @@ import re
 from click.testing import CliRunner
 from faker import Faker
 
+from nexuscli.api import repository
 from nexuscli.cli import constants
 from nexuscli.nexus_config import NexusConfig
 
@@ -81,5 +82,26 @@ def upload_args_factory(faker):
             'recurse': _as_bool(recurse),
         }
         return args, xargs
+
+    return fixture
+
+
+@pytest.fixture
+def member_repos_factory(nexus_client, faker):
+    def fixture(recipe):
+        hosted_class = repository.collection.get_repository_class(
+            {'recipeName': f'{recipe}-hosted'})
+        hosted_name = repo_name('hosted', recipe)
+        r = hosted_class(hosted_name, nexus_client=nexus_client)
+        nexus_client.repositories.create(r)
+
+        proxy_class = repository.collection.get_repository_class({'recipeName': f'{recipe}-proxy'})
+        proxy_name = repo_name('proxy', recipe)
+        r = proxy_class(proxy_name, nexus_client=nexus_client, remote_url=faker.url())
+        nexus_client.repositories.create(r)
+
+        member_names_args = f'--member-names {hosted_name} --member-names {proxy_name}'
+
+        return member_names_args, [hosted_name, proxy_name]
 
     return fixture

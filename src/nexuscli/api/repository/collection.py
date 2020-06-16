@@ -118,6 +118,10 @@ def _add_apt_kwargs(kwargs, attributes):
             kwargs['flat'] = attributes['apt']['flat']
 
 
+def _add_group_kwargs(kwargs, attributes):
+    kwargs['member_names'] = attributes['group']['memberNames']
+
+
 def _add_hosted_kwargs(kwargs, attributes):
     kwargs['write_policy'] = attributes['storage']['writePolicy']
 
@@ -151,9 +155,10 @@ def _repository_args_kwargs(raw_configuration):
     # TODO: support Group
     if _recipe_type(raw_configuration) == 'Proxy':
         _add_proxy_kwargs(kwargs, attributes)
-
-    if _recipe_type(raw_configuration) == 'Hosted':
+    elif _recipe_type(raw_configuration) == 'Hosted':
         _add_hosted_kwargs(kwargs, attributes)
+    elif _recipe_type(raw_configuration) == 'Group':
+        _add_group_kwargs(kwargs, attributes)
 
     return args, kwargs
 

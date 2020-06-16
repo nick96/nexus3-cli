@@ -25,6 +25,7 @@ def repositories_by_type(repo_types):
 
 @pytest.helpers.register
 def yum_repos():
+    # TODO: use collection.get_repository_class instead
     yum_repos = [
         repository.model.YumRepository,
         repository.model.YumHostedRepository,

@@ -42,6 +42,28 @@ def test_create_hosted(
 
 
 @pytest.mark.parametrize(
+    'recipe, strict', itertools.product(
+        repository.model.GroupRepository.RECIPES,  # format
+        ['--no-strict-content', '--strict-content'],  # strict
+    ))
+@pytest.mark.integration
+def test_create_group(nexus_client, cli_runner, recipe, strict, member_repos_factory):
+    member_names_arg, member_names = member_repos_factory(recipe)
+
+    repo_name = pytest.helpers.repo_name('group', recipe, strict)
+
+    create_cmd = f'repository create group {recipe} {repo_name} {strict} {member_names_arg}'
+
+    result = cli_runner.invoke(nexus_cli, create_cmd)
+    repo = nexus_client.repositories.get_by_name(repo_name)
+
+    assert result.output == ''
+    assert result.exit_code == exception.CliReturnCode.SUCCESS.value
+    assert repo.name == repo_name
+    assert repo.member_names == member_names
+
+
+@pytest.mark.parametrize(
     'v_policy, l_policy, w_policy, strict, c_policy', itertools.product(
         repository.model.MavenRepository.VERSION_POLICIES,  # v_policy
         repository.model.MavenRepository.LAYOUT_POLICIES,  # l_policy

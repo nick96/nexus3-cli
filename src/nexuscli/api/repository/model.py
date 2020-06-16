@@ -37,11 +37,16 @@ class BaseRepository:
     :type strict_content_type_validation: bool
     """
     RECIPES = ()
+    """The repository recipes supported by this class"""
     TYPE = None
+    """The repository type supported by this class"""
+    # TODO: refactor this so derived classes don't even accept a `recipe` kwarg
+    DEFAULT_RECIPE = DEFAULT_RECIPE
+    """If a recipe is not given during initialisation, use this one as the default"""
 
     def __init__(self, name,
                  nexus_client=None,
-                 recipe=DEFAULT_RECIPE,
+                 recipe=None,
                  blob_store_name=DEFAULT_BLOB_STORE_NAME,
                  strict_content_type_validation=DEFAULT_STRICT_CONTENT,
                  ):
@@ -49,7 +54,7 @@ class BaseRepository:
         self.nexus_client = nexus_client
         # TODO: remove this the RECIPES attributes; no longer needed as there's
         #   a unique class for each recipe/type.
-        self.recipe = recipe.lower()
+        self.recipe = (recipe or self.DEFAULT_RECIPE).lower()
         self.blob_store_name = blob_store_name
         self.strict_content = strict_content_type_validation
 
@@ -445,11 +450,10 @@ class MavenRepository(Repository):
         documentation for details.
     :param kwargs: see :class:`Repository`
     """
+    DEFAULT_RECIPE = 'maven'
     RECIPES = ('maven',)
-
     LAYOUT_POLICIES = ('PERMISSIVE', 'STRICT')
     """Maven layout policies"""
-
     VERSION_POLICIES = ('RELEASE', 'SNAPSHOT', 'MIXED')
     """Maven version policies"""
 
@@ -523,6 +527,7 @@ class YumRepository(Repository):
     :type depth: int
     :param kwargs: see :class:`Repository`
     """
+    DEFAULT_RECIPE = 'yum'
     RECIPES = ('yum',)
 
     def __init__(self, name, depth=1, **kwargs):
@@ -564,83 +569,83 @@ class YumProxyRepository(ProxyRepository, YumRepository):
 
     See :class:`ProxyRepository` and :class:`YumRepository`
     """
-    pass
 
 
 # For the convenience of not having to handle these recipe names differently
 class BowerGroupRepository(GroupRepository):
-    pass
+    DEFAULT_RECIPE = 'bower'
 
 
 class BowerHostedRepository(HostedRepository):
-    pass
+    DEFAULT_RECIPE = 'bower'
 
 
 class BowerProxyRepository(ProxyRepository):
-    pass
+    DEFAULT_RECIPE = 'bower'
 
 
 class NpmGroupRepository(GroupRepository):
-    pass
+    DEFAULT_RECIPE = 'npm'
 
 
 class NpmHostedRepository(HostedRepository):
-    pass
+    DEFAULT_RECIPE = 'npm'
 
 
 class NpmProxyRepository(ProxyRepository):
-    pass
+    DEFAULT_RECIPE = 'npm'
 
 
 class NugetGroupRepository(GroupRepository):
-    pass
+    DEFAULT_RECIPE = 'nuget'
 
 
 class NugetHostedRepository(HostedRepository):
-    pass
+    DEFAULT_RECIPE = 'nuget'
 
 
 class NugetProxyRepository(ProxyRepository):
-    pass
+    DEFAULT_RECIPE = 'nuget'
 
 
 class PypiGroupRepository(GroupRepository):
-    pass
+    DEFAULT_RECIPE = 'pypi'
 
 
 class PypiHostedRepository(HostedRepository):
-    pass
+    DEFAULT_RECIPE = 'pypi'
 
 
 class PypiProxyRepository(ProxyRepository):
-    pass
+    DEFAULT_RECIPE = 'pypi'
 
 
 class RawGroupRepository(GroupRepository):
-    pass
+    DEFAULT_RECIPE = 'raw'
 
 
 class RawHostedRepository(HostedRepository):
-    pass
+    DEFAULT_RECIPE = 'raw'
 
 
 class RawProxyRepository(ProxyRepository):
-    pass
+    DEFAULT_RECIPE = 'raw'
 
 
 class RubygemsGroupRepository(GroupRepository):
-    pass
+    DEFAULT_RECIPE = 'rubygems'
 
 
 class RubygemsHostedRepository(HostedRepository):
-    pass
+    DEFAULT_RECIPE = 'rubygems'
 
 
 class RubygemsProxyRepository(ProxyRepository):
-    pass
+    DEFAULT_RECIPE = 'rubygems'
 
 
 class DockerRepository(Repository):
+    DEFAULT_RECIPE = 'docker'
     RECIPES = ('docker',)
 
     def __init__(self, name,
@@ -741,6 +746,7 @@ class DockerProxyRepository(ProxyRepository, DockerRepository):
 
 
 class AptRepository(Repository):
+    DEFAULT_RECIPE = 'apt'
     RECIPES = ('apt',)
 
     def __init__(self, name,

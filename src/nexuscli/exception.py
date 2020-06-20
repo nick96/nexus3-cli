@@ -1,3 +1,4 @@
+import json
 from click import ClickException
 from enum import Enum
 
@@ -14,21 +15,52 @@ class CliReturnCode(Enum):
     SUBCOMMAND_ERROR = 11
     POLICY_NOT_FOUND = 20
     REPOSITORY_NOT_FOUND = 30
+    CONFIG_ERROR = 40
     UNKNOWN_ERROR = 99
+
+
+API_ERROR_MAP = {
+    'Creating and updating scripts is disabled': {
+        'class': 'ConfigError',
+        'msg': (
+            'Please enable scripting in your Nexus instance; see https://support.sonatype.com/hc'
+            '/en-us/articles/360045220393-Scripting-Nexus-Repository-Manager-3#how-to-enable')
+    },
+}
+"""Map from Nexus API response to an exception class and user-friendly error"""
 
 
 class NexusClientBaseError(ClickException):
     exit_code = CliReturnCode.UNKNOWN_ERROR.value
 
-    # TODO: add error message; e.g.:
-    # nexus_error = CliReturnCode.UNKNOWN_ERROR
-    # def __init__(self, message):
-    #     super().__init__(self.nexus_error.message)
+
+def _raise_if_error_is_mapped(nexus_message_bytes):
+    try:
+        nexus_response = json.loads(nexus_message_bytes)
+    except (TypeError, json.JSONDecodeError):
+        return
+
+    if not isinstance(nexus_response, dict):
+        return
+
+    try:
+        result = nexus_response['result']
+        print('RESULT IS', result)
+    except KeyError:
+        raise TypeError from None
+
+    if result in API_ERROR_MAP.keys():
+        raise globals()[API_ERROR_MAP[result]['class']](API_ERROR_MAP[result]['msg']) from None
 
 
 class NexusClientAPIError(NexusClientBaseError):
     """Unexpected response from Nexus service."""
     exit_code = CliReturnCode.API_ERROR.value
+
+    def __init__(self, message_bytes=None):
+        super().__init__(message_bytes)
+        print('message is', message_bytes)
+        _raise_if_error_is_mapped(message_bytes)
 
 
 class NexusClientConnectionError(NexusClientBaseError):
@@ -75,3 +107,8 @@ class NexusClientCreateCleanupPolicyError(NexusClientBaseError):
 class DownloadError(NexusClientBaseError):
     """Error retrieving artefact from Nexus service."""
     exit_code = CliReturnCode.DOWNLOAD_ERROR.value
+
+
+class ConfigError(NexusClientBaseError):
+    """Configuration error."""
+    exit_code = CliReturnCode.CONFIG_ERROR.value

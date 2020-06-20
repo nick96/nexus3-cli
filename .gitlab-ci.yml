@@ -4,6 +4,7 @@ include:
   - template: Dependency-Scanning.gitlab-ci.yml
   - template: License-Scanning.gitlab-ci.yml
   - template: SAST.gitlab-ci.yml
+  - template: Secret-Detection.gitlab-ci.yml
 #
 variables:
   SAST_BANDIT_EXCLUDED_PATHS: '*/tests/*'
@@ -135,6 +136,11 @@ sast:
   stage: quality
   rules:
     - if: $CI_COMMIT_BRANCH
+secret_detection:
+  stage: quality
+  variables:
+    # re-enable when fixed: https://gitlab.com/gitlab-org/gitlab/-/issues/223565
+    SECRET_DETECTION_HISTORIC_SCAN: "false"
 # --------------------------------------------------------------------------
 # `publish` stage
 # --------------------------------------------------------------------------

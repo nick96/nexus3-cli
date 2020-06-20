@@ -63,7 +63,7 @@ class NexusClient(object):
 
             try:
                 maybe_semver = server.split(' ')[0].split('/')[1].split('-')[0]
-                version = semver.parse_version_info(maybe_semver)
+                version = semver.VersionInfo.parse(maybe_semver)
             except (IndexError, ValueError):
                 return None
 

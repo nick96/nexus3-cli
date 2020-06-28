@@ -139,8 +139,7 @@ sast:
 secret_detection:
   stage: quality
   variables:
-    # re-enable when fixed: https://gitlab.com/gitlab-org/gitlab/-/issues/223565
-    SECRET_DETECTION_HISTORIC_SCAN: "false"
+    SECRET_DETECTION_HISTORIC_SCAN: "true"
 # --------------------------------------------------------------------------
 # `publish` stage
 # --------------------------------------------------------------------------

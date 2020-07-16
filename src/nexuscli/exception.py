@@ -45,7 +45,6 @@ def _raise_if_error_is_mapped(nexus_message_bytes):
 
     try:
         result = nexus_response['result']
-        print('RESULT IS', result)
     except KeyError:
         raise TypeError from None
 
@@ -59,7 +58,6 @@ class NexusClientAPIError(NexusClientBaseError):
 
     def __init__(self, message_bytes=None):
         super().__init__(message_bytes)
-        print('message is', message_bytes)
         _raise_if_error_is_mapped(message_bytes)
 
 

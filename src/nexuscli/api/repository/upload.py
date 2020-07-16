@@ -5,6 +5,56 @@ from nexuscli import exception
 from nexuscli.api.repository.validations import REMOTE_PATH_SEPARATOR
 
 
+def upload_file_npm(repository, src_file, dst_dir=None, dst_file=None):
+    """
+    Upload a single file to a npm repository.
+
+    :param repository: repository instance used to access Nexus 3 service.
+    :type repository: nexuscli.api.repository.model.Repository
+    :param src_file: path to the local file to be uploaded.
+    :param dst_dir: NOT USED
+    :param dst_file: NOT USED
+    :raises exception.NexusClientInvalidRepositoryPath: invalid repository
+        path.
+    :raises exception.NexusClientAPIError: unknown response from Nexus API.
+    """
+    params = {'repository': repository.name}
+    files = {'npm.asset': open(src_file, 'rb').read()}
+
+    response = repository.nexus_client.http_post(
+        'components', files=files, params=params, stream=True)
+
+    if response.status_code != 204:
+        raise exception.NexusClientAPIError(
+            f'Uploading to {repository.name}. Reason: {response.reason} '
+            f'Status code: {response.status_code} Text: {response.text}')
+
+
+def upload_file_pypi(repository, src_file, dst_dir=None, dst_file=None):
+    """
+    Upload a single file to a PyPI repository.
+
+    :param repository: repository instance used to access Nexus 3 service.
+    :type repository: nexuscli.api.repository.model.Repository
+    :param src_file: path to the local file to be uploaded.
+    :param dst_dir: NOT USED
+    :param dst_file: NOT USED
+    :raises exception.NexusClientInvalidRepositoryPath: invalid repository
+        path.
+    :raises exception.NexusClientAPIError: unknown response from Nexus API.
+    """
+    params = {'repository': repository.name}
+    files = {'pypi.asset': open(src_file, 'rb').read()}
+
+    response = repository.nexus_client.http_post(
+        'components', files=files, params=params, stream=True)
+
+    if response.status_code != 204:
+        raise exception.NexusClientAPIError(
+            f'Uploading to {repository.name}. Reason: {response.reason} '
+            f'Status code: {response.status_code} Text: {response.text}')
+
+
 def upload_file_raw(repository, src_file, dst_dir, dst_file):
     """
     Upload a single file to a raw repository.

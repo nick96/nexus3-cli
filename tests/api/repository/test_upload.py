@@ -6,6 +6,28 @@ from nexuscli.api.repository import upload
 SEP = upload.REMOTE_PATH_SEPARATOR  # for shorter lines in the tests
 
 
+def test_upload_file_npm_error(mocker, tmpdir, faker):
+    """Ensure the method raises an exception when the API response is wrong"""
+    repository = mocker.Mock()
+    src_file = tmpdir.join(faker.file_name()).ensure()
+
+    with pytest.raises(exception.NexusClientAPIError):
+        upload.upload_file_pypi(repository, src_file, None, None)
+
+    repository.nexus_client.http_post.assert_called_once()
+
+
+def test_upload_file_pypi_error(mocker, tmpdir, faker):
+    """Ensure the method raises an exception when the API response is wrong"""
+    repository = mocker.Mock()
+    src_file = tmpdir.join(faker.file_name()).ensure()
+
+    with pytest.raises(exception.NexusClientAPIError):
+        upload.upload_file_pypi(repository, src_file, None, None)
+
+    repository.nexus_client.http_post.assert_called_once()
+
+
 def test_upload_file_raw_error(mocker, tmpdir, faker):
     """Ensure the method raises an exception when the API response is wrong"""
     dst_dir = upload.REMOTE_PATH_SEPARATOR.join(faker.words())

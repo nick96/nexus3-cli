@@ -65,9 +65,9 @@ def test_create_group(nexus_client, cli_runner, recipe, strict, member_repos_fac
 
 @pytest.mark.parametrize(
     'v_policy, l_policy, w_policy, strict, c_policy', itertools.product(
-        repository.model.MavenRepository.VERSION_POLICIES,  # v_policy
-        repository.model.MavenRepository.LAYOUT_POLICIES,  # l_policy
-        repository.model.HostedRepository.WRITE_POLICIES,  # w_policy
+        repository.model.MavenHostedRepository.VERSION_POLICIES,  # v_policy
+        repository.model.MavenHostedRepository.LAYOUT_POLICIES,  # l_policy
+        repository.model.MavenHostedRepository.WRITE_POLICIES,  # w_policy
         ['--no-strict-content', '--strict-content'],  # strict
         ['', '--cleanup-policy=c_policy'],  # c_policy
     ))
@@ -148,8 +148,8 @@ def test_create_proxy(
 @pytest.mark.parametrize(
     'v_policy, l_policy, strict, c_policy, '
     'remote_auth_type', itertools.product(
-        repository.model.MavenRepository.VERSION_POLICIES,  # v_policy
-        repository.model.MavenRepository.LAYOUT_POLICIES,  # l_policy
+        repository.model.MavenHostedRepository.VERSION_POLICIES,  # v_policy
+        repository.model.MavenHostedRepository.LAYOUT_POLICIES,  # l_policy
         ['--no-strict-content', '--strict-content'],  # strict
         ['', '--cleanup-policy=c_policy'],  # c_policy
         [None, 'username'],  # remote-auth-type

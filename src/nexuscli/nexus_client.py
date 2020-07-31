@@ -11,7 +11,8 @@ from urllib.parse import urljoin
 from nexuscli.nexus_config import NexusConfig
 from nexuscli import exception, nexus_util
 from nexuscli.api.cleanup_policy import CleanupPolicyCollection
-from nexuscli.api.repository import validations, RepositoryCollection
+from nexuscli.api.repository import RepositoryCollection
+from nexuscli.api.repository.recipes import validations
 from nexuscli.api.script import ScriptCollection
 
 LOG = logging.getLogger(__name__)

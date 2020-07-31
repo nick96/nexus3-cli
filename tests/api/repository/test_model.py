@@ -2,7 +2,9 @@ import itertools
 import pytest
 from semver import VersionInfo
 
-from nexuscli.api.repository import collection, model
+from nexuscli.api.repository import collection, model, recipes
+from nexuscli.api.repository.recipes.base import CLEANUP_SET_MIN_VERSION
+from nexuscli.api.repository.recipes.validations import REMOTE_PATH_SEPARATOR
 
 
 @pytest.mark.parametrize(
@@ -38,18 +40,12 @@ def test_upload_file(repo_class, mocker, file_upload_args, faker):
     right helper from the upload module.
     """
     src_file, _, dst_dir, dst_file = file_upload_args
-
     repo = repo_class(faker.word())
-
-    x_upload_method_name = f'upload_file_{repo.recipe_name}'
-    upload_method = mocker.Mock()
-    # inject mock upload method into upload module
-    mock_upload = mocker.patch('nexuscli.api.repository.model.upload')
-    mocker.patch.object(mock_upload, x_upload_method_name, upload_method)
+    upload_method = mocker.patch.object(repo, 'upload_file')
 
     repo.upload_file(src_file, dst_dir, dst_file)
 
-    upload_method.assert_called_with(repo, src_file, dst_dir, dst_file)
+    upload_method.assert_called_with(src_file, dst_dir, dst_file)
 
 
 @pytest.mark.parametrize(
@@ -81,12 +77,12 @@ def test_upload_directory(repo_class, recurse, flatten, mocker, faker):
     Ensure the method calls upload_file with parameters based on the quantity
     of files in a given directory.
     """
-    src_dir = model.upload.REMOTE_PATH_SEPARATOR.join(faker.words())
-    dst_dir = model.upload.REMOTE_PATH_SEPARATOR.join(faker.words())
+    src_dir = REMOTE_PATH_SEPARATOR.join(faker.words())
+    dst_dir = REMOTE_PATH_SEPARATOR.join(faker.words())
     x_subdirectory = faker.pystr()
     x_file_path = faker.pystr()
 
-    util = mocker.patch('nexuscli.api.repository.model.util')
+    util = mocker.patch('nexuscli.api.repository.recipes.base_hosted.util')
     util.get_files.return_value = faker.pylist(10, True, str)
     util.get_upload_subdirectory.return_value = x_subdirectory
     mocker.patch('os.path.join', return_value=x_file_path)
@@ -159,7 +155,7 @@ def test_group_repository_configuration(recipe, mock_nexus_client, faker):
 
 @pytest.mark.parametrize(
     'yum_repo',
-    pytest.helpers.yum_repos()
+    [getattr(recipes.yum, x) for x in recipes.yum.__all__]
 )
 def test_yum_repository_configuration(yum_repo, mock_nexus_client, faker):
     x_name = faker.word()
@@ -169,6 +165,9 @@ def test_yum_repository_configuration(yum_repo, mock_nexus_client, faker):
         'nexus_client': mock_nexus_client,
         'depth': x_depth
     }
+
+    if yum_repo.TYPE == 'group':
+        pytest.skip('Not implemented')
 
     if yum_repo.TYPE == 'proxy':
         kwargs['remote_url'] = faker.url()
@@ -180,7 +179,7 @@ def test_yum_repository_configuration(yum_repo, mock_nexus_client, faker):
 
 @pytest.mark.parametrize('version,xpolicy', [
     (None, lambda x: [x]),
-    (model.CLEANUP_SET_MIN_VERSION, lambda x: [x]),
+    (CLEANUP_SET_MIN_VERSION, lambda x: [x]),
     (VersionInfo(0, 0, 0), lambda x: x)
 ])
 def test_cleanup_policy(version, xpolicy, mocker, mock_nexus_client, faker):

@@ -24,18 +24,6 @@ def repositories_by_type(repo_types):
 
 
 @pytest.helpers.register
-def yum_repos():
-    # TODO: use collection.get_repository_class instead
-    yum_repos = [
-        repository.model.YumRepository,
-        repository.model.YumHostedRepository,
-        repository.model.YumProxyRepository
-    ]
-    for yum_repo_class in yum_repos:
-        yield yum_repo_class
-
-
-@pytest.helpers.register
 def default_repos():
     default_repos_path = pathlib.Path('tests/fixtures/default-repos')
 

@@ -1,6 +1,6 @@
 import pytest
 
-from nexuscli.api.repository import validations
+from nexuscli.api.repository.recipes import validations
 
 
 @pytest.mark.parametrize('value, known, x_exception', [

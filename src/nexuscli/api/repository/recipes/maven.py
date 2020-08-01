@@ -63,6 +63,10 @@ class _MavenRepository(Repository):
 
         return repo_config
 
+    @property
+    def recipe_name(self):
+        return 'maven2'
+
 
 class MavenHostedRepository(HostedRepository, _MavenRepository):
     """

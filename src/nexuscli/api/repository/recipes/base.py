@@ -70,10 +70,6 @@ class BaseRepository:
         always the same as :attr:`name` with ``maven`` being the notable
         exception.
         """
-        # TODO: move this to maven class
-        if self.recipe == 'maven':
-            return 'maven2'
-
         return self.recipe
 
     @property

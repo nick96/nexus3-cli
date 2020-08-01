@@ -273,3 +273,24 @@ class RepositoryCollection:
         result = resp.get('result')
         if result != 'null':
             raise exception.NexusClientCreateRepositoryError(resp)
+
+    def set_health_check(self, name: str, enable: bool = False) -> None:
+        """
+        Set the health check status on a Nexus 3 repository.
+
+        :param name: name of the repository wanted
+        :param enable: whether to enable of disable the health check
+        :rtype: nexuscli.api.repository.model.Repository
+        :raise exception.NexusClientInvalidRepository: when a repository with
+            the given name isn't found.
+        """
+        endpoint = f'repositories/{name}/health-check'
+        service_url = self._client.rest_url + 'beta/'
+
+        if enable:
+            resp = self._client.http_post(endpoint, service_url=service_url, data='')
+        else:
+            resp = self._client.http_delete(endpoint, service_url=service_url)
+
+        if resp.status_code != 204:
+            raise exception.NexusClientAPIError(resp.content)

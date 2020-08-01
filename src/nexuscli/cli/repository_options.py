@@ -42,6 +42,9 @@ PROXY = COMMON + CLEANUP + [
     click.option(
         '--remote-auth-type', help='Only username is supported',
         type=click.Choice(['username'], case_sensitive=False)),
+    click.option(
+        '--health-check/--no-health-check', default=False,
+        help='Enable Repository Health Check'),
     # TODO: require `--remote-auth-type username` when these are specified
     click.option('--remote-username', help='Username for remote URL'),
     click.option('--remote-password', help='Password for remote URL'),

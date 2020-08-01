@@ -7,6 +7,7 @@ import semver
 import sys
 from clint.textui import progress
 from urllib.parse import urljoin
+from typing import Optional
 
 from nexuscli.nexus_config import NexusConfig
 from nexuscli import exception, nexus_util
@@ -72,7 +73,7 @@ class NexusClient(object):
         return self._server_version
 
     @property
-    def repositories(self):
+    def repositories(self) -> Optional[RepositoryCollection]:
         """
         Instance of
         :class:`~nexuscli.api.repository.collection.RepositoryCollection`. This
@@ -117,8 +118,17 @@ class NexusClient(object):
 
         :rtype: str
         """
-        url = urljoin(self.config.url, 'service/rest/')
-        return urljoin(url, self.config.api_version + '/')
+        return urljoin(self.config.url, 'service/rest/')
+
+    @property
+    def service_url(self):
+        """
+        Full URL to the Nexus REST API, based on the ``url`` and ``version``
+        from :attr:`config`.
+
+        :rtype: str
+        """
+        return urljoin(self.rest_url, self.config.api_version + '/')
 
     def http_request(self, method, endpoint, service_url=None, **kwargs):
         """
@@ -135,7 +145,7 @@ class NexusClient(object):
         :param kwargs: as per :py:func:`requests.request`.
         :rtype: requests.Response
         """
-        service_url = service_url or self.rest_url
+        service_url = service_url or self.service_url
         url = urljoin(service_url, endpoint)
 
         try:
@@ -146,8 +156,7 @@ class NexusClient(object):
             raise exception.NexusClientConnectionError(str(e)) from None
 
         if response.status_code == 401:
-            raise exception.NexusClientInvalidCredentials(
-                'Try running `nexus3 login`')
+            raise exception.NexusClientInvalidCredentials('Try running `nexus3 login`')
 
         return response
 

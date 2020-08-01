@@ -13,17 +13,6 @@ def repository_collection(mock_nexus_client):
 
 
 @pytest.helpers.register
-def repositories_by_type(repo_types):
-    """Yield all repositories with the ``repo_type`` TYPE."""
-    if isinstance(repo_types, str):
-        repo_types = [repo_types]
-
-    for repo_class in repository.model.__all__:
-        if repo_class.TYPE in repo_types:
-            yield repo_class
-
-
-@pytest.helpers.register
 def default_repos():
     default_repos_path = pathlib.Path('tests/fixtures/default-repos')
 

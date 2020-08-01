@@ -1,6 +1,5 @@
 from nexuscli import exception
 from nexuscli.api.repository.recipes.base import Repository
-from nexuscli.api.repository.recipes.base_group import GroupRepository
 from nexuscli.api.repository.recipes.base_hosted import HostedRepository
 from nexuscli.api.repository.recipes.base_proxy import ProxyRepository
 from nexuscli.api.repository.recipes.validations import REMOTE_PATH_SEPARATOR
@@ -86,6 +85,6 @@ class YumProxyRepository(ProxyRepository, _YumRepository):
     """
 
 
-class YumGroupRepository(GroupRepository, _YumRepository):
+class YumGroupRepository:
     def __init__(self, *args, **kwargs):
         raise NotImplementedError

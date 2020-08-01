@@ -1,14 +1,36 @@
+import inspect
 import json
 import semver
+import sys
 
 from nexuscli import exception, nexus_util
-from nexuscli.api.repository import model
+from nexuscli.api.repository import model, Repository
 
 # TODO: determine `SCRIPT_CREATE_VERSIONS` based on the existence of a versioned .groovy script
 SCRIPT_CREATE_VERSIONS = [semver.VersionInfo(3, 21, 0)]
 SCRIPT_NAME_CREATE = 'nexus3-cli-repository-create'
 SCRIPT_NAME_DELETE = 'nexus3-cli-repository-delete'
 SCRIPT_NAME_GET = 'nexus3-cli-repository-get'
+
+
+def get_repository_classes():
+    members = inspect.getmembers(sys.modules['nexuscli.api.repository.model'], inspect.isclass)
+    return [cls for _, cls in members if issubclass(cls, Repository) and cls.DEFAULT_RECIPE]
+
+
+def get_classes_by_type(repo_types):
+    if isinstance(repo_types, str):
+        repo_types = [repo_types]
+
+    return [x for x in get_repository_classes() if x.TYPE in repo_types]
+
+
+def get_recipes_by_type(repo_type):
+    return [x.RECIPE_NAME for x in get_classes_by_type(repo_type)]
+
+
+def get_supported_recipes():
+    return sorted(set([cls.DEFAULT_RECIPE for cls in get_repository_classes()]))
 
 
 def get_repository_class(raw_configuration):
@@ -20,11 +42,13 @@ def get_repository_class(raw_configuration):
     :type raw_configuration: dict
     :return: repository class
     """
-    class_name = _repository_class_name(raw_configuration)
-    for class_ in model.__all__:
-        if class_.__name__ == class_name:
+    recipe_name = _recipe_name(raw_configuration).lower()
+    recipe_type = _recipe_type(raw_configuration).lower()
+    for class_ in get_classes_by_type(recipe_type):
+        if class_.DEFAULT_RECIPE == recipe_name:
             return class_
-    raise NotImplementedError(f'{class_name} for {raw_configuration}')
+
+    raise NotImplementedError(f'{recipe_name} {recipe_type} for {raw_configuration}')
 
 
 def _recipe_name(raw_configuration):
@@ -54,31 +78,6 @@ def _recipe_type(raw_configuration):
     :return: Group, Proxy or Hosted
     """
     return raw_configuration['recipeName'].split('-')[1].title()
-
-
-def _repository_class_name(raw_configuration):
-    """
-    Given a raw repository configuration, returns the corresponding python
-    repository class name.
-
-    :param raw_configuration: configuration as returned by the SCRIPT_NAME_GET
-        groovy script.
-    :type raw_configuration: dict
-    :return: name of the repository class
-    """
-    recipe_name = _recipe_name(raw_configuration)
-    class_name = ''
-
-    # The Repository class is the default because it implements most of the
-    # recipes
-    if recipe_name not in model.Repository.RECIPES:
-        class_name += recipe_name
-
-    class_name += _recipe_type(raw_configuration)
-
-    class_name += 'Repository'
-
-    return class_name
 
 
 # TODO: flattening-out the configuration on the python class turned-out to be

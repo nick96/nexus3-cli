@@ -2,10 +2,9 @@ import click
 import logging
 import pkg_resources
 
-from nexuscli import (
-    LOG_LEVEL,
-    nexus_config)
-from nexuscli.api.repository import model
+from nexuscli import LOG_LEVEL, nexus_config
+from nexuscli.api.repository import collection as repository_collection
+from nexuscli.api.repository import model as repository_model
 from nexuscli.cli import (
     repository_options, root_commands, util, subcommand_repository,
     subcommand_cleanup_policy, subcommand_script)
@@ -182,11 +181,11 @@ def _create_repository(ctx, repo_type, **kwargs):
     name='group',
     cls=util.mapped_commands({
         # 'apt': Nexus doesn't support it
-        'docker': model.DockerHostedRepository.RECIPES,
-        'maven': model.MavenHostedRepository.RECIPES,
-        'yum': model.YumHostedRepository.RECIPES,
+        'docker': repository_model.DockerHostedRepository.RECIPES,
+        'maven': repository_model.MavenHostedRepository.RECIPES,
+        'yum': repository_model.YumHostedRepository.RECIPES,
         # generic, remaining repositories
-        'recipe': model.HostedRepository.RECIPES,
+        'recipe': repository_model.HostedRepository.RECIPES,
     }))
 def repository_create_group():
     """
@@ -211,12 +210,12 @@ def repository_create_group_recipe(ctx: click.Context, **kwargs):
 @repository_create.command(
     name='hosted',
     cls=util.mapped_commands({
-        'apt': model.AptHostedRepository.RECIPES,
-        'docker': model.DockerHostedRepository.RECIPES,
-        'maven': model.MavenHostedRepository.RECIPES,
-        'yum': model.YumHostedRepository.RECIPES,
+        'apt': repository_model.AptHostedRepository.RECIPES,
+        'docker': repository_model.DockerHostedRepository.RECIPES,
+        'maven': repository_model.MavenHostedRepository.RECIPES,
+        'yum': repository_model.YumHostedRepository.RECIPES,
         # generic, remaining repositories
-        'recipe': model.HostedRepository.RECIPES,
+        'recipe': repository_model.HostedRepository.RECIPES,
     }))
 def repository_create_hosted():
     """
@@ -291,12 +290,12 @@ def repository_create_hosted_yum(ctx: click.Context, **kwargs):
 @repository_create.command(
     name='proxy',
     cls=util.mapped_commands({
-        'apt': model.AptProxyRepository.RECIPES,
-        'docker': model.DockerProxyRepository.RECIPES,
-        'maven': model.MavenProxyRepository.RECIPES,
-        'yum': model.YumProxyRepository.RECIPES,
+        'apt': repository_model.AptProxyRepository.RECIPES,
+        'docker': repository_model.DockerProxyRepository.RECIPES,
+        'maven': repository_model.MavenProxyRepository.RECIPES,
+        'yum': repository_model.YumProxyRepository.RECIPES,
         # remaining, generic repositories
-        'recipe': model.ProxyRepository.RECIPES,
+        'recipe': repository_model.ProxyRepository.RECIPES,
     }))
 def repository_create_proxy():
     """
@@ -384,7 +383,7 @@ def cleanup_policy():
 @click.option(
     '--format', default='all',
     help='The recipe that this cleanup policy can be applied to',
-    type=click.Choice(['all'] + list(model.SUPPORTED_FORMATS)))
+    type=click.Choice(['all'] + repository_collection.get_supported_recipes()))
 @click.option(
     '--downloaded', type=click.IntRange(min=1),
     help='Cleanup criteria; last downloaded in this many days.')

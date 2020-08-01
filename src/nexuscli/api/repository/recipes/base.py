@@ -2,7 +2,6 @@ import semver
 
 from nexuscli.api.repository.recipes import validations
 
-DEFAULT_RECIPE = 'raw'
 DEFAULT_WRITE_POLICY = 'ALLOW'
 DEFAULT_BLOB_STORE_NAME = 'default'
 DEFAULT_STRICT_CONTENT = False
@@ -38,7 +37,7 @@ class BaseRepository:
     TYPE = None
     """The repository type supported by this class"""
     # TODO: refactor this so derived classes don't even accept a `recipe` kwarg
-    DEFAULT_RECIPE = DEFAULT_RECIPE
+    DEFAULT_RECIPE = None
     """If a recipe is not given during initialisation, use this one as the default"""
 
     def __init__(self, name,
@@ -58,7 +57,7 @@ class BaseRepository:
         self.__validate_params()
 
     def __repr__(self):
-        return f'{self.__class__.__name__}-{self.name}-{self.recipe}'
+        return f'{self.__class__.__name__}-{self.name}'
 
     def __validate_params(self):
         validations.ensure_known('recipe', self.recipe, self.RECIPES)

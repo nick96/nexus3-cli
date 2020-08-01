@@ -53,15 +53,13 @@ def test_upload_root(cli_runner, nexus_client, make_testfile, faker):
     ['--recurse', '--no-recurse'],
 ))
 def test_upload(
-        cmd, flatten, recurse, nexus_mock_client, mocker, upload_args_factory,
-        cli_runner):
+        cmd, flatten, recurse, nexus_mock_client, mocker, upload_args_factory, cli_runner):
     """
     Ensure all accepted variations of the upload command result in the
     cmd_upload method being called.
     https://github.com/thiagofigueiro/nexus3-cli/issues/76
     """
-    mocker.patch(
-        'nexuscli.cli.util.get_client', return_value=nexus_mock_client)
+    mocker.patch('nexuscli.cli.util.get_client', return_value=nexus_mock_client)
     mock_cmd_upload = mocker.patch('nexuscli.cli.root_commands.cmd_upload')
 
     cmd_upload, xargs = upload_args_factory(cmd, flatten, recurse)

@@ -2,14 +2,14 @@ import itertools
 import pytest
 from semver import VersionInfo
 
-from nexuscli.api.repository import collection, model, recipes
+from nexuscli.api.repository import collection, model
 from nexuscli.api.repository.recipes.base import CLEANUP_SET_MIN_VERSION
 from nexuscli.api.repository.recipes.validations import REMOTE_PATH_SEPARATOR
 
 
 @pytest.mark.parametrize(
     'repo_class',
-    pytest.helpers.repositories_by_type(['hosted', 'proxy', 'group']))
+    collection.get_classes_by_type(['hosted', 'proxy', 'group']))
 def test_repository_recipe(repo_class, faker):
     """
     For repository classes that accept multiple recipes, ensure the recipe
@@ -33,7 +33,7 @@ def test_repository_recipe(repo_class, faker):
 
 
 @pytest.mark.parametrize(
-    'repo_class', pytest.helpers.repositories_by_type('hosted'))
+    'repo_class', collection.get_classes_by_type('hosted'))
 def test_upload_file(repo_class, mocker, file_upload_args, faker):
     """
     Ensure all hosted repositories have an upload_file method that calls the
@@ -49,7 +49,7 @@ def test_upload_file(repo_class, mocker, file_upload_args, faker):
 
 
 @pytest.mark.parametrize(
-    'repo_class', pytest.helpers.repositories_by_type(['proxy', 'group']))
+    'repo_class', collection.get_classes_by_type(['proxy', 'group']))
 def test_upload_missing(repo_class, faker):
     """
     Ensure that no proxy, group repositories have upload_* methods
@@ -69,7 +69,7 @@ def test_upload_missing(repo_class, faker):
 
 @pytest.mark.parametrize(
     'repo_class, recurse, flatten', itertools.product(
-        pytest.helpers.repositories_by_type('hosted'),  # repo_class
+        collection.get_classes_by_type('hosted'),       # repo_class
         [True, False],                                  # recurse
         [True, False]))                                 # flatten
 def test_upload_directory(repo_class, recurse, flatten, mocker, faker):
@@ -105,7 +105,7 @@ def test_upload_directory(repo_class, recurse, flatten, mocker, faker):
 
 @pytest.mark.parametrize(
     'repo_class',
-    pytest.helpers.repositories_by_type(['hosted', 'proxy', 'group']))
+    collection.get_classes_by_type(['hosted', 'proxy', 'group']))
 def test_repository_configuration(
         repo_class, mock_nexus_client, faker, gpg_key_as_cwd):
     x_name = faker.word()
@@ -155,7 +155,7 @@ def test_group_repository_configuration(recipe, mock_nexus_client, faker):
 
 @pytest.mark.parametrize(
     'yum_repo',
-    [getattr(recipes.yum, x) for x in recipes.yum.__all__]
+    [x for x in collection.get_repository_classes() if x.DEFAULT_RECIPE == 'yum']
 )
 def test_yum_repository_configuration(yum_repo, mock_nexus_client, faker):
     x_name = faker.word()
@@ -165,9 +165,6 @@ def test_yum_repository_configuration(yum_repo, mock_nexus_client, faker):
         'nexus_client': mock_nexus_client,
         'depth': x_depth
     }
-
-    if yum_repo.TYPE == 'group':
-        pytest.skip('Not implemented')
 
     if yum_repo.TYPE == 'proxy':
         kwargs['remote_url'] = faker.url()
@@ -182,7 +179,7 @@ def test_yum_repository_configuration(yum_repo, mock_nexus_client, faker):
     (CLEANUP_SET_MIN_VERSION, lambda x: [x]),
     (VersionInfo(0, 0, 0), lambda x: x)
 ])
-def test_cleanup_policy(version, xpolicy, mocker, mock_nexus_client, faker):
+def test_cleanup_policy(version, xpolicy, mock_nexus_client, faker):
     """
     From CLEANUP_SET_MIN_VERSION, Nexus takes a set of policy names instead
     of a single policy. Ensure the method returns the right type according to
@@ -192,7 +189,7 @@ def test_cleanup_policy(version, xpolicy, mocker, mock_nexus_client, faker):
     policy = faker.word()
 
     mock_nexus_client.server_version = version
-    repository = model.Repository(
+    repository = model.RawHostedRepository(
         'myrepo', nexus_client=mock_nexus_client, cleanup_policy=policy)
 
     assert repository.cleanup_policy == xpolicy(policy)

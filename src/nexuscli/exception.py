@@ -26,6 +26,12 @@ API_ERROR_MAP = {
             'Please enable scripting in your Nexus instance; see https://support.sonatype.com/hc'
             '/en-us/articles/360045220393-Scripting-Nexus-Repository-Manager-3#how-to-enable')
     },
+    '"EULA is not accepted"': {
+        'class': 'ConfigError',
+        'msg': (
+            'Please accept the Health Check EULA using your Nexus instance UI; once this is done '
+            'for at least one repository, the API call will work for other repositories')
+    },
 }
 """Map from Nexus API response to an exception class and user-friendly error"""
 
@@ -34,7 +40,27 @@ class NexusClientBaseError(ClickException):
     exit_code = CliReturnCode.UNKNOWN_ERROR.value
 
 
+def _lookup_and_raise(nexus_message):
+    if nexus_message in API_ERROR_MAP.keys():
+        friendly_message = API_ERROR_MAP[nexus_message]['msg']
+        exception_class = API_ERROR_MAP[nexus_message]['class']
+        raise globals()[exception_class](friendly_message) from None
+
+
 def _raise_if_error_is_mapped(nexus_message_bytes):
+    # error could be a plain string
+    if isinstance(nexus_message_bytes, str):
+        _lookup_and_raise(nexus_message_bytes)
+
+    # or it could be a byte-encoded string
+    if isinstance(nexus_message_bytes, bytes):
+        try:
+            result = nexus_message_bytes.decode('utf-8')
+            _lookup_and_raise(result)
+        except UnicodeDecodeError:
+            pass
+
+    # maybe it's a JSON object
     try:
         nexus_response = json.loads(nexus_message_bytes)
     except (TypeError, json.JSONDecodeError):
@@ -46,10 +72,9 @@ def _raise_if_error_is_mapped(nexus_message_bytes):
     try:
         result = nexus_response['result']
     except KeyError:
-        raise TypeError from None
+        raise TypeError('Unrecognised Nexus error response') from None
 
-    if result in API_ERROR_MAP.keys():
-        raise globals()[API_ERROR_MAP[result]['class']](API_ERROR_MAP[result]['msg']) from None
+    _lookup_and_raise(result)
 
 
 class NexusClientAPIError(NexusClientBaseError):

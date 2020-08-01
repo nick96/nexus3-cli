@@ -24,8 +24,9 @@ def cmd_list(nexus_client):
 def cmd_create(ctx, repo_type=None, repository_name=None, **kwargs):
     """Performs ``nexus3 repository create`` commands"""
     nexus_client = ctx.obj
-    recipe = kwargs["recipe"]
     kwargs['nexus_client'] = nexus_client
+    recipe = kwargs["recipe"]
+    enable_health_check = kwargs.pop('health_check', False)
 
     Repository = repository.collection.get_repository_class({
         'recipeName': f'{recipe}-{repo_type}'})
@@ -33,6 +34,10 @@ def cmd_create(ctx, repo_type=None, repository_name=None, **kwargs):
     r = Repository(repository_name, **kwargs)
 
     nexus_client.repositories.create(r)
+
+    # only available for proxy repositories; relying on Click to not set this for hosted, group.
+    if enable_health_check:
+        nexus_client.repositories.set_health_check(r.name, True)
 
     return exception.CliReturnCode.SUCCESS.value
 

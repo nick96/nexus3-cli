@@ -329,8 +329,7 @@ class NexusClient(object):
                 raise IndexError
         except IndexError:
             raise exception.NexusClientInvalidRepositoryPath(
-                'The given path does not contain a repository: {}'.format(
-                    component_path))
+                f'The given path does not contain a repository: {component_path}')
 
         return repository, path_fragments
 
@@ -520,8 +519,7 @@ class NexusClient(object):
         """False when nocache is set or local file is out-of-date"""
         if nocache:
             try:
-                LOG.debug('Removing {} because nocache is set\n'.format(
-                    download_path))
+                LOG.debug('Removing %s because nocache is set\n', download_path)
                 os.remove(download_path)
             except FileNotFoundError:
                 pass

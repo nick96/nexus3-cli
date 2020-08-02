@@ -167,14 +167,7 @@ class Repository(BaseRepository):
     :type cleanup_policy: str
     """
 
-    RECIPES = (
-        'bower',
-        'npm',
-        'nuget',
-        'pypi',
-        'raw',
-        'rubygems',
-    )
+    RECIPES = ('bower', 'npm', 'nuget', 'pypi', 'raw', 'rubygems')
     TYPE = None
 
     def __init__(self, name, cleanup_policy=None, **kwargs):

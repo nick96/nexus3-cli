@@ -2,12 +2,13 @@ import click
 import functools
 import os
 import sys
-import typing
+from typing import Dict, List, Optional
 
 from nexuscli import exception
 from nexuscli.cli import constants
 from nexuscli.nexus_client import NexusClient
 from nexuscli.nexus_config import NexusConfig
+from texttable import Texttable
 
 
 class AliasedGroup(click.Group):
@@ -90,7 +91,7 @@ def rename_keys(mydict: dict, rename_map: dict):
             del mydict[current_name]
 
 
-def _get_client_kwargs() -> typing.Optional[typing.Dict[str, str]]:
+def _get_client_kwargs() -> Optional[Dict[str, str]]:
     def _without_prefix(name):
         return name[len(constants.ENV_VAR_PREFIX) + 1:].lower()
 
@@ -136,3 +137,22 @@ def get_client():
             'Warning: configuration not found; proceeding with defaults.\n'
             'To remove this warning, please run `nexus3 login`\n')
     return NexusClient(config=config)
+
+
+def print_as_table(contents: List[Dict], fields: List) -> None:
+    """
+    Print json API output as a table
+
+    :param contents: table contents
+    :param fields: list of key names in contents elements to be added as columns to table
+    """
+    table = Texttable(max_width=constants.TTY_MAX_WIDTH)
+    table.add_row([x.title() for x in fields])
+    table.set_deco(Texttable.HEADER | Texttable.HLINES)
+    for item in contents:
+        row = []
+        for field in fields:
+            row.append(item[field])
+        table.add_row(row)
+
+    print(table.draw())

@@ -1,7 +1,8 @@
 import itertools
 import pytest
 
-from nexuscli import nexus_util
+from nexuscli import exception, nexus_util
+from nexuscli.api.base_collection import BaseCollection
 from nexuscli.nexus_util import calculate_hash, filtered_list_gen
 
 
@@ -93,3 +94,32 @@ def test_ensure_exists(is_dir, tmp_path, faker):
     assert path.exists()
     assert is_dir == path.is_dir()
     assert is_dir != path.is_file()
+
+
+def test_with_min_version(nexus_mock_client):
+    """
+    Ensure the decorator:
+    1. raises an exception when the server version is less than required
+    2. runs the decorated method and returns its value when the server version is equal the
+       required
+    """
+    min_version = nexus_mock_client._server_version.next_version('patch')
+
+    @nexus_util.with_min_version(str(nexus_mock_client._server_version))
+    def collection_method_good(self):
+        return 1
+
+    @nexus_util.with_min_version('0.0.0')
+    def collection_method_alsogood(self):
+        return 2
+
+    @nexus_util.with_min_version(str(min_version))
+    def collection_method_bad(self):
+        pass
+
+    collection = BaseCollection(client=nexus_mock_client)
+    with pytest.raises(exception.NexusClientCapabilityUnsupported):
+        collection_method_bad(collection)
+
+    assert collection_method_good(collection) == 1
+    assert collection_method_alsogood(collection) == 2

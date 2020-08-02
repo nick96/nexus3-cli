@@ -3,13 +3,14 @@ import logging
 import semver
 
 from nexuscli import exception, nexus_util
+from nexuscli.api.base_collection import BaseCollection
 from nexuscli.api.cleanup_policy import CleanupPolicy
 
 LOG = logging.getLogger(__name__)
 GROOVY_SCRIPT_VERSIONS = [semver.VersionInfo(3, 20, 0)]
 
 
-class CleanupPolicyCollection(object):
+class CleanupPolicyCollection(BaseCollection):
     """
     A class to manage Nexus 3 Cleanup Policies.
 
@@ -23,7 +24,7 @@ class CleanupPolicyCollection(object):
     """Default Groovy script used by this class"""
 
     def __init__(self, client=None):
-        self._client = client
+        super().__init__(client=client)
         self._setup_script()
 
     @property

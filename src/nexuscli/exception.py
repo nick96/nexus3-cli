@@ -11,6 +11,7 @@ class CliReturnCode(Enum):
     CONNECTION_ERROR = 3
     DOWNLOAD_ERROR = 4
     INVALID_CREDENTIALS = 5
+    CAPABILITY_NOT_AVAILABLE = 6
     INVALID_SUBCOMMAND = 10
     SUBCOMMAND_ERROR = 11
     POLICY_NOT_FOUND = 20
@@ -34,10 +35,6 @@ API_ERROR_MAP = {
     },
 }
 """Map from Nexus API response to an exception class and user-friendly error"""
-
-
-class NexusClientBaseError(ClickException):
-    exit_code = CliReturnCode.UNKNOWN_ERROR.value
 
 
 def _lookup_and_raise(nexus_message):
@@ -75,6 +72,10 @@ def _raise_if_error_is_mapped(nexus_message_bytes):
         raise TypeError('Unrecognised Nexus error response') from None
 
     _lookup_and_raise(result)
+
+
+class NexusClientBaseError(ClickException):
+    exit_code = CliReturnCode.UNKNOWN_ERROR.value
 
 
 class NexusClientAPIError(NexusClientBaseError):
@@ -125,6 +126,11 @@ class NexusClientCreateRepositoryError(NexusClientBaseError):
 class NexusClientCreateCleanupPolicyError(NexusClientBaseError):
     """Used when a cleanup policy creation operation in Nexus fails."""
     exit_code = CliReturnCode.SUBCOMMAND_ERROR.value
+
+
+class NexusClientCapabilityUnsupported(NexusClientBaseError):
+    """Client tried to use a capability that doesn't exist in this Nexus 3 server version"""
+    exit_code = CliReturnCode.CAPABILITY_NOT_AVAILABLE.value
 
 
 class DownloadError(NexusClientBaseError):

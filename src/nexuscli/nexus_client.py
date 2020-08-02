@@ -43,7 +43,7 @@ class NexusClient(object):
         self.repositories.refresh()
 
     @property
-    def server_version(self):
+    def server_version(self) -> Optional[semver.VersionInfo]:
         """
         Parse the Server header from a Nexus request response and return
         as version information. The method expects the header Server to be

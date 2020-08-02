@@ -4,6 +4,7 @@ import semver
 import sys
 
 from nexuscli import exception, nexus_util
+from nexuscli.api.base_collection import BaseCollection
 from nexuscli.api.repository import model, Repository
 
 # TODO: determine `SCRIPT_CREATE_VERSIONS` based on the existence of a versioned .groovy script
@@ -162,19 +163,10 @@ def _repository_args_kwargs(raw_configuration):
     return args, kwargs
 
 
-class RepositoryCollection:
-    """
-    A class to manage Nexus 3 repositories.
-
-    Args:
-        client(nexuscli.nexus_client.NexusClient): the client instance that
-            will be used to perform operations against the Nexus 3 service. You
-            must provide this at instantiation or set it before calling any
-            methods that require connectivity to Nexus.
-    """
-
+class RepositoryCollection(BaseCollection):
+    """A class to manage Nexus 3 repositories."""
     def __init__(self, client=None):
-        self._client = client
+        super().__init__(client=client)
         self._repositories_json = None
 
     def get_by_name(self, name):
@@ -188,10 +180,10 @@ class RepositoryCollection:
             the given name isn't found.
         """
         configuration = self.get_raw_by_name(name)
-        Repository = get_repository_class(configuration)
+        cls = get_repository_class(configuration)
         args, kwargs = _repository_args_kwargs(configuration)
 
-        return Repository(*args, nexus_client=self._client, **kwargs)
+        return cls(*args, nexus_client=self._client, **kwargs)
 
     def get_raw_by_name(self, name):
         """
@@ -273,6 +265,7 @@ class RepositoryCollection:
         if result != 'null':
             raise exception.NexusClientCreateRepositoryError(resp)
 
+    @nexus_util.with_min_version('3.20.1')
     def set_health_check(self, name: str, enable: bool = False) -> None:
         """
         Set the health check status on a Nexus 3 repository.

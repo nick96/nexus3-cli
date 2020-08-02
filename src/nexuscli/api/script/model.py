@@ -1,23 +1,9 @@
 from nexuscli import exception, nexus_util
+from nexuscli.api.base_collection import BaseCollection
 
 
-class ScriptCollection(object):
-    """
-    A class to manage Nexus 3 scripts.
-
-    Args:
-        client(nexuscli.nexus_client.NexusClient): the client instance that
-            will be used to perform operations against the Nexus 3 service. You
-            must provide this at instantiation or set it before calling any
-            methods that require connectivity to Nexus.
-
-    Attributes:
-        client(nexuscli.nexus_client.NexusClient): as per ``client``
-            argument of :class:`ScriptCollection`.
-    """
-    def __init__(self, client=None):
-        self._client = client
-
+class ScriptCollection(BaseCollection):
+    """A class to manage Nexus 3 scripts."""
     def exists(self, name):
         """
         Check if a script exists.

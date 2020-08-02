@@ -1,7 +1,6 @@
 """Handles base/root commands (as opposed to subcommands)"""
 import inflect
 import sys
-import types
 
 from nexuscli import exception, nexus_config
 from nexuscli.nexus_client import NexusClient
@@ -31,25 +30,20 @@ def cmd_login(**kwargs):
 def cmd_list(nexus_client, repository_path):
     """Performs ``nexus3 list``"""
     artefact_list = nexus_client.list(repository_path)
-
-    # FIXME: is types.GeneratorType still used?
-    if isinstance(artefact_list, (list, types.GeneratorType)):
-        for artefact in iter(artefact_list):
-            print(artefact)
-        return exception.CliReturnCode.SUCCESS.value
-    else:
-        return exception.CliReturnCode.UNKNOWN_ERROR.value
+    for artefact in iter(artefact_list):
+        print(artefact)
+    return exception.CliReturnCode.SUCCESS.value
 
 
 def _cmd_up_down_errors(count, action):
     """Print and exit with error if upload/download/delete didn't succeed"""
     if count == 0:
         # FIXME: inflex the action verb to past participle
-        sys.stderr.write('WARNING: no files were {}\'ed.'.format(action))
+        sys.stderr.write(f'WARNING: no files were {action}\'ed.')
         sys.exit(exception.CliReturnCode.NO_FILES.value)
 
     if count == -1:
-        sys.stderr.write('ERROR during {} operation.'.format(action))
+        sys.stderr.write(f'ERROR during {action} operation.')
         sys.exit(exception.CliReturnCode.API_ERROR.value)
 
 

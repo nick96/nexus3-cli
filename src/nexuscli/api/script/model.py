@@ -114,7 +114,7 @@ class ScriptCollection(BaseCollection):
             run the script; i.e.: any HTTP code other than 200.
         """
         headers = {'content-type': 'text/plain'}
-        endpoint = 'script/{}/run'.format(script_name)
+        endpoint = f'script/{script_name}/run'
         resp = self._client.http_post(endpoint, headers=headers, data=data)
         if resp.status_code != 200:
             raise exception.NexusClientAPIError(resp.content)
@@ -129,7 +129,7 @@ class ScriptCollection(BaseCollection):
         :raises exception.NexusClientAPIError: if the Nexus service fails to
             delete the script; i.e.: any HTTP code other than 204.
         """
-        endpoint = 'script/{}'.format(script_name)
+        endpoint = f'script/{script_name}'
         resp = self._client.http_delete(endpoint)
         if resp.status_code != 204:
             raise exception.NexusClientAPIError(resp.reason)

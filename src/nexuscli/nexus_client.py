@@ -15,6 +15,7 @@ from nexuscli.api.cleanup_policy import CleanupPolicyCollection
 from nexuscli.api.repository import RepositoryCollection
 from nexuscli.api.repository.recipes import validations
 from nexuscli.api.script import ScriptCollection
+from nexuscli.api.task import TaskCollection
 
 LOG = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class NexusClient(object):
         self._cleanup_policies = None
         self._repositories = None
         self._scripts = None
+        self._tasks = None
 
         self.repositories.refresh()
 
@@ -79,12 +81,22 @@ class NexusClient(object):
         :class:`~nexuscli.api.repository.collection.RepositoryCollection`. This
         will automatically use the existing instance of :class:`NexusClient` to
         communicate with the Nexus service.
-
-        :rtype: RepositoryCollection
         """
         if self._repositories is None:
             self._repositories = RepositoryCollection(client=self)
         return self._repositories
+
+    @property
+    def tasks(self) -> Optional[TaskCollection]:
+        """
+        Instance of
+        :class:`~nexuscli.api.task.collection.RepositoryCollection`. This
+        will automatically use the existing instance of :class:`NexusClient` to
+        communicate with the Nexus service.
+        """
+        if self._tasks is None:
+            self._tasks = TaskCollection(client=self)
+        return self._tasks
 
     @property
     def cleanup_policies(self):
@@ -435,6 +447,7 @@ class NexusClient(object):
         repository.upload_file(src_dir, dst_dir, dst_file)
         return 1
 
+    # TODO: move the upload code to the repository model
     def upload(self, source, destination, recurse=True, flatten=False):
         """
         Process an upload. The source must be either a local file name or

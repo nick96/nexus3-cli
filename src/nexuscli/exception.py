@@ -14,6 +14,8 @@ class CliReturnCode(Enum):
     CAPABILITY_NOT_AVAILABLE = 6
     INVALID_SUBCOMMAND = 10
     SUBCOMMAND_ERROR = 11
+    NOT_FOUND = 12
+    TASK_DISABLED = 13
     POLICY_NOT_FOUND = 20
     REPOSITORY_NOT_FOUND = 30
     CONFIG_ERROR = 40
@@ -141,3 +143,19 @@ class DownloadError(NexusClientBaseError):
 class ConfigError(NexusClientBaseError):
     """Configuration error."""
     exit_code = CliReturnCode.CONFIG_ERROR.value
+
+
+class NotFound(NexusClientBaseError):
+    """The requested object/item was not found on the server"""
+    exit_code = CliReturnCode.NOT_FOUND.value
+
+    def __init__(self, message):
+        super().__init__(f'{message} was not found on the server')
+
+
+class TaskDisabled(NexusClientBaseError):
+    """The requested task is disabled"""
+    exit_code = CliReturnCode.TASK_DISABLED.value
+
+    def __init__(self, message):
+        super().__init__(f'{message} is disabled')

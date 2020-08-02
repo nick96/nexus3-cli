@@ -136,6 +136,6 @@ class ScriptCollection(BaseCollection):
 
 
 # TODO: describe script and use/return from collection methods
-class Script(object):
+class Script:
     """A Class representing a Nexus 3 script."""
     pass

@@ -7,7 +7,7 @@ from nexuscli.api.repository import collection as repository_collection
 from nexuscli.api.repository import model as repository_model
 from nexuscli.cli import (
     repository_options, root_commands, util, subcommand_repository,
-    subcommand_cleanup_policy, subcommand_script)
+    subcommand_cleanup_policy, subcommand_script, subcommand_task)
 from nexuscli.cli.constants import ENV_VAR_PREFIX
 
 PACKAGE_VERSION = pkg_resources.get_distribution('nexus3-cli').version
@@ -470,3 +470,45 @@ def script_run(ctx: click.Context, name, script_arguments):
     Run the script called NAME.
     """
     subcommand_script.cmd_run(ctx.obj, name, script_arguments)
+
+
+#############################################################################
+# tasks sub-commands
+@nexus_cli.group(cls=util.AliasedGroup)
+def task():
+    """
+    Task operations.
+    """
+    pass
+
+
+@task.command(name='list')
+@click.option('--json/--no-json', default=False, help='Print output as json')
+@util.with_nexus_client
+def task_list(ctx: click.Context, **kwargs):
+    """List all tasks."""
+    subcommand_task.cmd_list(ctx.obj, **kwargs)
+
+
+@task.command(name='show')
+@click.argument('task_id')
+@util.with_nexus_client
+def task_show(ctx: click.Context, task_id):
+    """Show the details for TASK_ID as JSON."""
+    subcommand_task.cmd_show(ctx.obj, task_id)
+
+
+@task.command(name='run')
+@click.argument('task_id')
+@util.with_nexus_client
+def task_run(ctx: click.Context, task_id):
+    """Run TASK_ID."""
+    subcommand_task.cmd_run(ctx.obj, task_id)
+
+
+@task.command(name='stop')
+@click.argument('task_id')
+@util.with_nexus_client
+def task_stop(ctx: click.Context, task_id):
+    """Stop running TASK_ID."""
+    subcommand_task.cmd_stop(ctx.obj, task_id)

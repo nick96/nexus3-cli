@@ -83,7 +83,7 @@ def test_upload_directory(repo_class, recurse, flatten, mocker, faker):
     x_file_path = faker.pystr()
 
     util = mocker.patch('nexuscli.api.repository.recipes.base_hosted.util')
-    util.get_files.return_value = faker.pylist(10, True, str)
+    util.get_files.return_value = faker.pylist(10, True, [str])
     util.get_upload_subdirectory.return_value = x_subdirectory
     mocker.patch('os.path.join', return_value=x_file_path)
 
@@ -141,7 +141,7 @@ def test_repository_configuration(
 def test_group_repository_configuration(recipe, mock_nexus_client, faker):
     repo_class = collection.get_repository_class({'recipeName': f'{recipe}-group'})
     x_name = faker.word()
-    x_member_names = faker.pylist(10, True, str)
+    x_member_names = faker.pylist(10, True, [str])
 
     kwargs = {
         'nexus_client': mock_nexus_client,

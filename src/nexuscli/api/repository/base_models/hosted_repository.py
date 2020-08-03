@@ -2,8 +2,10 @@ import os
 
 from clint.textui import progress
 
-from nexuscli.api.repository.recipes import util, validations
-from nexuscli.api.repository.recipes.base import Repository, DEFAULT_WRITE_POLICY
+from nexuscli.api.repository.recipes import validations
+from nexuscli.api.repository.base_models import util, Repository
+
+DEFAULT_WRITE_POLICY = 'ALLOW'
 
 
 class HostedRepository(Repository):
@@ -53,6 +55,34 @@ class HostedRepository(Repository):
     def upload_file(self, src_file, dst_dir, dst_file=None):
         raise NotImplementedError
 
+    @classmethod
+    def get_upload_subdirectory(cls, dst_dir, file_path, flatten=False):
+        """
+        Find the destination subdirectory based on given parameters. This is mostly
+        so the `flatten` option is honoured.
+
+        :param dst_dir: destination directory
+        :param file_path: file path, using REMOTE_PATH_SEPARATOR as the directory
+            separator.
+        :param flatten: when True, sub_directory will be flattened (ie: file_path
+            structure will not be present in the destination directory)
+        :type flatten: bool
+        :return: the appropriate sub directory in the destination directory.
+        :rtype: str
+        """
+        # empty dst_dir because most repo formats, aside from raw, allow it
+        sub_directory = dst_dir or ''
+        if flatten:
+            return sub_directory
+
+        sep = cls.REMOTE_PATH_SEPARATOR
+        dirname = os.path.dirname(file_path)
+        if sub_directory.endswith(sep) or dirname.startswith(sep):
+            sep = ''
+        sub_directory += f'{sep}{dirname}'
+
+        return sub_directory
+
     def upload_directory(self, src_dir, dst_dir, recurse=True, flatten=False):
         """
         Uploads all files in a directory to the specified destination directory
@@ -73,7 +103,7 @@ class HostedRepository(Repository):
 
         for relative_filepath in file_set:
             file_path = os.path.join(src_dir, relative_filepath)
-            sub_directory = util.get_upload_subdirectory(
+            sub_directory = self.get_upload_subdirectory(
                 dst_dir, file_path, flatten)
             self.upload_file(file_path, sub_directory)
 

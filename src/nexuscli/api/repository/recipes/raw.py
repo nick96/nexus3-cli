@@ -1,10 +1,9 @@
 import os
 
 from nexuscli import exception
-from nexuscli.api.repository.recipes.base_hosted import HostedRepository
-from nexuscli.api.repository.recipes.base_group import GroupRepository
-from nexuscli.api.repository.recipes.base_proxy import ProxyRepository
-from nexuscli.api.repository.recipes.validations import REMOTE_PATH_SEPARATOR
+from nexuscli.api.repository.base_models import GroupRepository
+from nexuscli.api.repository.base_models import HostedRepository
+from nexuscli.api.repository.base_models import ProxyRepository
 
 __all__ = ['RawHostedRepository', 'RawProxyRepository', 'RawGroupRepository']
 
@@ -30,7 +29,7 @@ class RawHostedRepository(_RawRepository, HostedRepository):
             path.
         :raises exception.NexusClientAPIError: unknown response from Nexus API.
         """
-        dst_dir = os.path.normpath(dst_dir or REMOTE_PATH_SEPARATOR)
+        dst_dir = os.path.normpath(dst_dir or self.REMOTE_PATH_SEPARATOR)
         if dst_file is None:
             dst_file = os.path.basename(src_file)
 

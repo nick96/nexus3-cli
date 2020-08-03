@@ -1,6 +1,6 @@
-from nexuscli.api.repository.recipes.base import Repository
-from nexuscli.api.repository.recipes.base_hosted import HostedRepository
-from nexuscli.api.repository.recipes.base_proxy import ProxyRepository
+from nexuscli.api.repository.base_models import Repository
+from nexuscli.api.repository.base_models import HostedRepository
+from nexuscli.api.repository.base_models import ProxyRepository
 
 __all__ = ['AptHostedRepository', 'AptProxyRepository', 'AptGroupRepository']
 

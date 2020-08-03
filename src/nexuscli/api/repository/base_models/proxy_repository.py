@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from nexuscli.api.repository.recipes.base import Repository
+from nexuscli.api.repository.base_models.repository import Repository
 
 
 class ProxyRepository(Repository):

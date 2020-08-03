@@ -2,9 +2,8 @@ import itertools
 import pytest
 from semver import VersionInfo
 
-from nexuscli.api.repository import collection, model
-from nexuscli.api.repository.recipes.base import CLEANUP_SET_MIN_VERSION
-from nexuscli.api.repository.recipes.validations import REMOTE_PATH_SEPARATOR
+from nexuscli.api.repository import collection, model, Repository
+from nexuscli.api.repository.base_models.repository import CLEANUP_SET_MIN_VERSION
 
 
 @pytest.mark.parametrize(
@@ -77,14 +76,13 @@ def test_upload_directory(repo_class, recurse, flatten, mocker, faker):
     Ensure the method calls upload_file with parameters based on the quantity
     of files in a given directory.
     """
-    src_dir = REMOTE_PATH_SEPARATOR.join(faker.words())
-    dst_dir = REMOTE_PATH_SEPARATOR.join(faker.words())
+    src_dir = Repository.REMOTE_PATH_SEPARATOR.join(faker.words())
+    dst_dir = Repository.REMOTE_PATH_SEPARATOR.join(faker.words())
     x_subdirectory = faker.pystr()
     x_file_path = faker.pystr()
 
-    util = mocker.patch('nexuscli.api.repository.recipes.base_hosted.util')
+    util = mocker.patch('nexuscli.api.repository.base_models.hosted_repository.util')
     util.get_files.return_value = faker.pylist(10, True, [str])
-    util.get_upload_subdirectory.return_value = x_subdirectory
     mocker.patch('os.path.join', return_value=x_file_path)
 
     x_get_upload_subdirectory_calls = [
@@ -93,13 +91,14 @@ def test_upload_directory(repo_class, recurse, flatten, mocker, faker):
     ]
 
     repo = repo_class(faker.word())
+
+    mocker.patch.object(repo, 'get_upload_subdirectory', return_value=x_subdirectory)
     repo.upload_file = mocker.Mock()
 
     repo.upload_directory(src_dir, dst_dir, recurse=recurse, flatten=flatten)
 
     util.get_files.assert_called_with(src_dir, recurse)
-    util.get_upload_subdirectory.assert_has_calls(
-        x_get_upload_subdirectory_calls)
+    repo.get_upload_subdirectory.assert_has_calls(x_get_upload_subdirectory_calls)
     repo.upload_file.assert_called_with(x_file_path, x_subdirectory)
 
 

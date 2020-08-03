@@ -1,8 +1,7 @@
 from nexuscli import exception
-from nexuscli.api.repository.recipes.base import Repository
-from nexuscli.api.repository.recipes.base_hosted import HostedRepository
-from nexuscli.api.repository.recipes.base_proxy import ProxyRepository
-from nexuscli.api.repository.recipes.validations import REMOTE_PATH_SEPARATOR
+from nexuscli.api.repository.base_models import Repository
+from nexuscli.api.repository.base_models import HostedRepository
+from nexuscli.api.repository.base_models import ProxyRepository
 
 __all__ = ['YumGroupRepository', 'YumHostedRepository', 'YumProxyRepository']
 
@@ -61,8 +60,8 @@ class YumHostedRepository(HostedRepository, _YumRepository):
         :param dst_file: destination file name.
         :raises exception.NexusClientAPIError: unknown response from Nexus API.
         """
-        dst_dir = dst_dir or REMOTE_PATH_SEPARATOR
-        repository_path = REMOTE_PATH_SEPARATOR.join(
+        dst_dir = dst_dir or self.REMOTE_PATH_SEPARATOR
+        repository_path = self.REMOTE_PATH_SEPARATOR.join(
             ['repository', self.name, dst_dir, dst_file])
 
         with open(src_file, 'rb') as fh:

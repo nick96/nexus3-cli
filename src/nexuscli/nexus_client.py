@@ -2,9 +2,10 @@ import json
 import logging
 import os
 import pathlib
+import sys
+
 import requests
 import semver
-import sys
 from clint.textui import progress
 from urllib.parse import urljoin
 from typing import Optional
@@ -12,8 +13,7 @@ from typing import Optional
 from nexuscli.nexus_config import NexusConfig
 from nexuscli import exception, nexus_util
 from nexuscli.api.cleanup_policy import CleanupPolicyCollection
-from nexuscli.api.repository import RepositoryCollection
-from nexuscli.api.repository.recipes import validations
+from nexuscli.api.repository import RepositoryCollection, Repository
 from nexuscli.api.script import ScriptCollection
 from nexuscli.api.task import TaskCollection
 
@@ -35,7 +35,6 @@ class NexusClient(object):
     def __init__(self, config=None):
         self.config = config or NexusConfig()
         self._local_sep = os.sep
-        self._remote_sep = validations.REMOTE_PATH_SEPARATOR
         self._server_version = None
         self._cleanup_policies = None
         self._repositories = None
@@ -302,7 +301,7 @@ class NexusClient(object):
         :type repository_path: str
         :rtype: typing.Iterator[dict]
         """
-        repo, directory, filename = self.split_component_path(repository_path)
+        repo, directory, filename = nexus_util.split_component_path(repository_path)
         path_filter = ''  # matches everything
         partial_match = True
 
@@ -310,8 +309,8 @@ class NexusClient(object):
             path_filter = directory
             # Not all repos require a directory as part of the artefact path.
             if not (path_filter == '' or
-                    path_filter.endswith(self._remote_sep)):
-                path_filter += self._remote_sep
+                    path_filter.endswith(Repository.REMOTE_PATH_SEPARATOR)):
+                path_filter += Repository.REMOTE_PATH_SEPARATOR
 
         if filename is not None:
             partial_match = False
@@ -322,104 +321,6 @@ class NexusClient(object):
 
         for artefact in list_gen:
             yield artefact
-
-    def _pop_repository(self, component_path):
-        """
-        Helper for split_component_path. Returns the repository and the
-        remainder of the component_path as a path_fragments list.
-
-        :param component_path: the component path, as given to
-            split_component_path.
-        :return: tuple of (repository, path_fragments)
-        :rtype: tuple(str, list)
-        """
-        path_fragments = component_path.split(self._remote_sep)
-        try:
-            repository = path_fragments.pop(0)
-            # no cheating!
-            if not repository or repository == '.':
-                raise IndexError
-        except IndexError:
-            raise exception.NexusClientInvalidRepositoryPath(
-                f'The given path does not contain a repository: {component_path}')
-
-        return repository, path_fragments
-
-    def _pop_filename(self, component_path, path_fragments):
-        """
-        Helper for split_component_path. Returns the filename.
-
-        :param component_path: the component path, as given to
-            split_component_path.
-        :param path_fragments: as returned by _pop_repository.
-        :return: filename or None, if not available.
-        :rtype: str
-        """
-        filename = None
-        try:
-            if not component_path.endswith(self._remote_sep):
-                filename = path_fragments.pop()
-                if not filename or filename == '.':
-                    raise IndexError
-        except IndexError:
-            return None
-
-        return filename
-
-    def _pop_directory(self, path_fragments):
-        """
-        Helper for split_component_path. Returns the directory.
-
-        :param path_fragments: as returned by _pop_repository.
-        :return: directory or None, if not available.
-        :rtype: str
-        """
-        directory = self._remote_sep.join(path_fragments)
-        # for consistency
-        if directory.endswith(self._remote_sep):
-            directory = directory[:-1]
-        # nice try, user but no cigar
-        if not directory or directory == '.':
-            directory = None
-
-        return directory
-
-    def split_component_path(self, component_path):
-        """
-        Splits a given component path into repository, directory, filename.
-
-        A Nexus component path for a raw directory must have this format:
-
-        ``repository_name/directory[(/subdir1)...][/|filename]``
-
-        A path ending in ``/`` represents a directory; otherwise it represents
-        a filename.
-
-            >>> dst0 = 'myrepo0/dir/'
-            >>> dst1 = 'myrepo1/dir/subdir/'
-            >>> dst2 = 'myrepo2/dir/subdir/file'
-            >>> dst3 = 'myrepo3/dir/subdir/etc/file.ext'
-            >>> split_component_path(dst0)
-            >>> ('myrepo0', 'dir', None)
-            >>> split_component_path(dst1)
-            >>> ('myrepo1', 'dir/subdir', None)
-            >>> split_component_path(dst2)
-            >>> ('myrepo2', 'dir/subdir', 'file')
-            >>> split_component_path(dst3)
-            >>> ('myrepo3', 'dir/subdir/etc', 'file.ext')
-
-        :param component_path: the Nexus component path, as described above.
-        :type component_path: str
-        :return: tuple of ``(repository_name, directory, filename)``. If the
-            given ``component_path`` doesn't represent a file, then the
-            ``filename`` is set to :py:obj:`None`.
-        :rtype: tuple[str, str, str]
-        """
-        repository, path_fragments = self._pop_repository(component_path)
-        filename = self._pop_filename(component_path, path_fragments)
-        directory = self._pop_directory(path_fragments)
-
-        return repository, directory, filename
 
     def _upload_dir_or_file(self, file_or_dir, dst_repo, dst_dir, dst_file,
                             **kwargs):
@@ -470,7 +371,7 @@ class NexusClient(object):
         :type flatten: bool
         :return: number of files uploaded.
         """
-        repo, directory, filename = self.split_component_path(destination)
+        repo, directory, filename = nexus_util.split_component_path(destination)
         upload_count = self._upload_dir_or_file(
             source, repo, directory, filename,
             recurse=recurse, flatten=flatten)
@@ -498,13 +399,13 @@ class NexusClient(object):
         :return: the local path to be used.
         """
         # FIXME: use of multiple .. in the local_dst isn't resolved correctly
-        remote_isdir = remote_src.endswith(self._remote_sep)
+        remote_isdir = remote_src.endswith(Repository.REMOTE_PATH_SEPARATOR)
         # force destination to be a directory if the remote is a directory
         destination_isdir = (remote_isdir or
                              local_dst.endswith('.') or
                              local_dst.endswith('..') or
                              local_dst.endswith(self._local_sep))
-        local_relative = remote_src.replace(self._remote_sep, self._local_sep)
+        local_relative = remote_src.replace(Repository.REMOTE_PATH_SEPARATOR, self._local_sep)
         if flatten:
             local_relative = os.path.basename(local_relative)
         # remote=file, destination=file
@@ -597,7 +498,7 @@ class NexusClient(object):
         :rtype: int
         """
         download_count = 0
-        if source.endswith(self._remote_sep) and \
+        if source.endswith(Repository.REMOTE_PATH_SEPARATOR) and \
                 not (destination.endswith('.') or destination.endswith('..')):
             destination += self._local_sep
 

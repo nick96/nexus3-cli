@@ -1,9 +1,11 @@
 import inspect
 import json
+
 import semver
 import sys
 
-from nexuscli import exception, nexus_util
+from nexuscli import exception
+from nexuscli.api import util
 from nexuscli.api.base_collection import BaseCollection
 from nexuscli.api.repository import model, Repository
 
@@ -247,7 +249,7 @@ class RepositoryCollection(BaseCollection):
         :type repository: Repository
         :raises NexusClientCreateRepositoryError: error creating repository.
         """
-        script_name = nexus_util.script_for_version(
+        script_name = util.script_for_version(
             SCRIPT_NAME_CREATE,
             self._client.server_version,
             SCRIPT_CREATE_VERSIONS)
@@ -265,7 +267,7 @@ class RepositoryCollection(BaseCollection):
         if result != 'null':
             raise exception.NexusClientCreateRepositoryError(resp)
 
-    @nexus_util.with_min_version('3.20.1')
+    @util.with_min_version('3.20.1')
     def set_health_check(self, name: str, enable: bool = False) -> None:
         """
         Set the health check status on a Nexus 3 repository.

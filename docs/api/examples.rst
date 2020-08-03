@@ -23,13 +23,12 @@ In all examples below you will need to instantiate a client:
 Create a repository
 ^^^^^^^^^^^^^^^^^^^
 
->>> r = nexuscli.repository.Repository(
->>>     'hosted',
+>>> from nexuscli.api.repository.model import RawHostedRepository
+>>> r = RawHostedRepository(
 >>>     name='my-repository',
->>>     format='raw',
 >>>     blob_store_name='default',
 >>>     strict_content_type_validation=False,
->>>     write_policy='allow',
+>>>     write_policy='ALLOW',
 >>> )
 >>> nexus_client.repositories.create(r)
 >>> nexus_client.repositories.get_raw_by_name('my-repository')

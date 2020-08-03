@@ -54,8 +54,10 @@ def test_list_args(x_partial,
         x_starts_with = '/'.join([x_dst_dir, x_dst_file])
         repository_path = '/'.join([x_repo_name, x_dst_dir, x_dst_file])
 
-    nexus_mock_client.split_component_path = mocker.Mock(
-        return_value=(x_repo_name, x_dst_dir, x_dst_file))
+    split_component_path = mocker.patch(
+        'nexuscli.nexus_client.nexus_util.split_component_path',
+        return_value=(x_repo_name, x_dst_dir, x_dst_file)
+    )
 
     nexus_mock_client._get_paginated = mocker.Mock()
 
@@ -68,7 +70,7 @@ def test_list_args(x_partial,
     for artefact in nexus_mock_client.list(repository_path):
         artefacts.append({'path': artefact})
 
-    nexus_mock_client.split_component_path.assert_called_with(repository_path)
+    split_component_path.assert_called_with(repository_path)
     nexus_mock_client._get_paginated.assert_called()
     nexuscli.nexus_util.filtered_list_gen.assert_called_with(
         nexus_mock_client._get_paginated.return_value,

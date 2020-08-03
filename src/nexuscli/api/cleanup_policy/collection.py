@@ -1,8 +1,10 @@
 import json
 import logging
+
 import semver
 
 from nexuscli import exception, nexus_util
+from nexuscli.api import util
 from nexuscli.api.base_collection import BaseCollection
 from nexuscli.api.cleanup_policy import CleanupPolicy
 
@@ -29,7 +31,7 @@ class CleanupPolicyCollection(BaseCollection):
 
     @property
     def _script_name(self):
-        return nexus_util.script_for_version(
+        return util.script_for_version(
             self.GROOVY_SCRIPT_NAME,
             self._client.server_version,
             GROOVY_SCRIPT_VERSIONS)

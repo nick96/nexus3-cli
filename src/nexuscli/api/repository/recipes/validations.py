@@ -1,6 +1,3 @@
-REMOTE_PATH_SEPARATOR = '/'
-
-
 def ensure_known(target, value, known):
     """
     Validate whether the a target argument is known and supported. The

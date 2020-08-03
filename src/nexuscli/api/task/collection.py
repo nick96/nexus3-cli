@@ -1,11 +1,12 @@
-from nexuscli import exception, nexus_util
+from nexuscli import exception
+from nexuscli.api import util
 from nexuscli.api.base_collection import BaseCollection
 
 
 class TaskCollection(BaseCollection):
     # Moved from beta to v1:
     # https://github.com/sonatype/nexus-public/commit/a6a8abcdcba3fd1947884f05f913d0da6939261c
-    @nexus_util.with_min_version('3.12.1')
+    @util.with_min_version('3.12.1')
     def list(self) -> list:
         """
         List of all script names on the Nexus 3 service.
@@ -21,7 +22,7 @@ class TaskCollection(BaseCollection):
 
         return resp.json()
 
-    @nexus_util.with_min_version('3.12.1')
+    @util.with_min_version('3.12.1')
     def show(self, task_id) -> dict:
         """
         Get a single task by id
@@ -38,7 +39,7 @@ class TaskCollection(BaseCollection):
 
         return resp.json()
 
-    @nexus_util.with_min_version('3.12.1')
+    @util.with_min_version('3.12.1')
     def run(self, task_id) -> None:
         """
         Run a task by id
@@ -58,7 +59,7 @@ class TaskCollection(BaseCollection):
         if resp.status_code != 204:
             raise exception.NexusClientAPIError(resp.content)
 
-    @nexus_util.with_min_version('3.12.1')
+    @util.with_min_version('3.12.1')
     def stop(self, task_id) -> None:
         """
         Stop a running task by id

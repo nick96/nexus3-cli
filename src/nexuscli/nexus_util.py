@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
-import functools
 import hashlib
 import mmap
 import os
-import pathlib
 import pkg_resources
-import semver
-import warnings
-from typing import Any, Callable, TypeVar, cast
 
-import nexuscli
-
-# https://mypy.readthedocs.io/en/stable/generics.html#declaring-decorators
-
-F = TypeVar('F', bound=Callable[..., Any])
+from nexuscli import exception
+from nexuscli.api.repository import Repository
 
 
 def _resource_filename(resource_name):
@@ -178,48 +170,103 @@ def ensure_exists(path, is_dir=False):
         path.touch()
 
 
-def script_for_version(script_name, server_version, versions):
+def _pop_repository(component_path):
     """
-    Determine if a certain nexus server version requires a different version of
-    the given groovy script.
+    Helper for split_component_path. Returns the repository and the
+    remainder of the component_path as a path_fragments list.
 
-    :param script_name: original name of the script.
-    :param server_version: VersionInfo for the Nexus server.
-    :param versions: list of VersionInfo. Each element represents an existing
-        groovy script that must be used with server_version or greater.
-    :return: the version-specific name of script_name.
+    :param component_path: the component path, as given to
+        split_component_path.
+    :return: tuple of (repository, path_fragments)
+    :rtype: tuple(str, list)
     """
-    if server_version is None:
-        return script_name
+    path_fragments = component_path.split(Repository.REMOTE_PATH_SEPARATOR)
+    try:
+        repository = path_fragments.pop(0)
+        # no cheating!
+        if not repository or repository == '.':
+            raise IndexError
+    except IndexError:
+        raise exception.NexusClientInvalidRepositoryPath(
+            f'The given path does not contain a repository: {component_path}')
 
-    for breaking_version in sorted(versions, reverse=True):
-        if server_version >= breaking_version:
-            script_path = pathlib.Path(script_name)
-            # e.g.: nexus3-cli-repository-create_3.21.0.groovy
-            return f'{script_path.stem}_{breaking_version}{script_path.suffix}'
-
-    return script_name
+    return repository, path_fragments
 
 
-def with_min_version(min_version: str) -> Callable[[F], F]:
-    """Verifies that the `nexus_client` instance has version greater or equal to min_version"""
-    def decorator(f):
-        @functools.wraps(f)
-        # be explicit that args[0] is `self` in the context of the calling class instance
-        def wrapper(collection: 'nexuscli.api.base_collection.BaseCollection', *args, **kwargs):
-            try:
-                min_semver = semver.VersionInfo.parse(min_version)
-            except ValueError:
-                warnings.warn(
-                    'Invalid semver string; skipping version capability check', stacklevel=2)
-                return f(collection, *args, **kwargs)
+def _pop_filename(component_path, path_fragments):
+    """
+    Helper for split_component_path. Returns the filename.
 
-            if collection._client.server_version < min_semver:
-                raise nexuscli.exception.NexusClientCapabilityUnsupported(
-                    f'{f} requires version {min_semver}; server has '
-                    f'version {collection._client.server_version}')
+    :param component_path: the component path, as given to
+        split_component_path.
+    :param path_fragments: as returned by _pop_repository.
+    :return: filename or None, if not available.
+    :rtype: str
+    """
+    filename = None
+    try:
+        if not component_path.endswith(Repository.REMOTE_PATH_SEPARATOR):
+            filename = path_fragments.pop()
+            if not filename or filename == '.':
+                raise IndexError
+    except IndexError:
+        return None
 
-            return f(collection, *args, **kwargs)
+    return filename
 
-        return cast(F, wrapper)
-    return decorator
+
+def _pop_directory(path_fragments):
+    """
+    Helper for split_component_path. Returns the directory.
+
+    :param path_fragments: as returned by _pop_repository.
+    :return: directory or None, if not available.
+    :rtype: str
+    """
+    directory = Repository.REMOTE_PATH_SEPARATOR.join(path_fragments)
+    # for consistency
+    if directory.endswith(Repository.REMOTE_PATH_SEPARATOR):
+        directory = directory[:-1]
+    # nice try, user but no cigar
+    if not directory or directory == '.':
+        directory = None
+
+    return directory
+
+
+def split_component_path(component_path):
+    """
+    Splits a given component path into repository, directory, filename.
+
+    A Nexus component path for a raw directory must have this format:
+
+    ``repository_name/directory[(/subdir1)...][/|filename]``
+
+    A path ending in ``/`` represents a directory; otherwise it represents
+    a filename.
+
+        >>> dst0 = 'myrepo0/dir/'
+        >>> dst1 = 'myrepo1/dir/subdir/'
+        >>> dst2 = 'myrepo2/dir/subdir/file'
+        >>> dst3 = 'myrepo3/dir/subdir/etc/file.ext'
+        >>> split_component_path(dst0)
+        >>> ('myrepo0', 'dir', None)
+        >>> split_component_path(dst1)
+        >>> ('myrepo1', 'dir/subdir', None)
+        >>> split_component_path(dst2)
+        >>> ('myrepo2', 'dir/subdir', 'file')
+        >>> split_component_path(dst3)
+        >>> ('myrepo3', 'dir/subdir/etc', 'file.ext')
+
+    :param component_path: the Nexus component path, as described above.
+    :type component_path: str
+    :return: tuple of ``(repository_name, directory, filename)``. If the
+        given ``component_path`` doesn't represent a file, then the
+        ``filename`` is set to :py:obj:`None`.
+    :rtype: tuple[str, str, str]
+    """
+    repository, path_fragments = _pop_repository(component_path)
+    filename = _pop_filename(component_path, path_fragments)
+    directory = _pop_directory(path_fragments)
+
+    return repository, directory, filename

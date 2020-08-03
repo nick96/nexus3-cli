@@ -1,8 +1,8 @@
 import itertools
+
 import pytest
 
 from nexuscli import exception, nexus_util
-from nexuscli.api.base_collection import BaseCollection
 from nexuscli.nexus_util import calculate_hash, filtered_list_gen
 
 
@@ -96,30 +96,39 @@ def test_ensure_exists(is_dir, tmp_path, faker):
     assert is_dir != path.is_file()
 
 
-def test_with_min_version(nexus_mock_client):
-    """
-    Ensure the decorator:
-    1. raises an exception when the server version is less than required
-    2. runs the decorated method and returns its value when the server version is equal the
-       required
-    """
-    min_version = nexus_mock_client._server_version.next_version('patch')
+@pytest.mark.parametrize(
+    'component_path, x_repo, x_dir, x_file', [
+        ('some/path/', 'some', 'path', None),
+        ('some/other/path/', 'some', 'other/path', None),
+        ('some/path/file', 'some', 'path', 'file'),
+        ('some/other/path/file', 'some', 'other/path', 'file'),
+        ('some/path/file.ext', 'some', 'path', 'file.ext'),
+        ('repo', 'repo', None, None),
+        ('repo/', 'repo', None, None),
+        ('repo/.', 'repo', None, None),
+        ('repo/./', 'repo', None, None),
+        ('repo/./file', 'repo', None, 'file'),
+        ('repo/file', 'repo', None, 'file'),
+    ]
+)
+def test_split_component_path(component_path, x_repo, x_dir, x_file):
+    repository, directory, filename = nexus_util.split_component_path(
+        component_path)
 
-    @nexus_util.with_min_version(str(nexus_mock_client._server_version))
-    def collection_method_good(self):
-        return 1
+    assert repository == x_repo
+    assert directory == x_dir
+    assert filename == x_file
 
-    @nexus_util.with_min_version('0.0.0')
-    def collection_method_alsogood(self):
-        return 2
 
-    @nexus_util.with_min_version(str(min_version))
-    def collection_method_bad(self):
-        pass
+@pytest.mark.parametrize(
+    'component_path, x_error', [
+        ('', 'does not contain a repository'),
+        ('.', 'does not contain a repository'),
+        ('./', 'does not contain a repository'),
+    ]
+)
+def test_split_component_path_errors(component_path, x_error):
+    with pytest.raises(exception.NexusClientInvalidRepositoryPath) as e:
+        nexus_util.split_component_path(component_path)
 
-    collection = BaseCollection(client=nexus_mock_client)
-    with pytest.raises(exception.NexusClientCapabilityUnsupported):
-        collection_method_bad(collection)
-
-    assert collection_method_good(collection) == 1
-    assert collection_method_alsogood(collection) == 2
+    assert x_error in str(e.value)

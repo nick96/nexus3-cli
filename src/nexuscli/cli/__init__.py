@@ -159,7 +159,7 @@ def repository_create():
     pass
 
 
-def _create_repository(ctx, repo_type, **kwargs):
+def _create_repository(ctx, repo_type, **kwargs) -> None:
     # every repository recipe needs these
     kwargs['recipe'] = ctx.info_name
     util.upcase_values(
@@ -194,7 +194,7 @@ def repository_create_group():
     pass
 
 
-@repository_create_group.command(name='recipe')
+@repository_create_group.command(name='recipe')  # type: ignore
 @util.add_options(repository_options.COMMON)
 @click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group')
 @util.with_nexus_client
@@ -224,7 +224,7 @@ def repository_create_hosted():
     pass
 
 
-@repository_create_hosted.command(name='recipe')
+@repository_create_hosted.command(name='recipe')  # type: ignore
 @util.add_options(repository_options.HOSTED)
 @util.with_nexus_client
 def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
@@ -234,7 +234,7 @@ def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-@repository_create_hosted.command(name='apt')
+@repository_create_hosted.command(name='apt')  # type: ignore
 @util.add_options(repository_options.HOSTED)
 @util.add_options(repository_options.APT)
 @click.option(
@@ -250,7 +250,7 @@ def repository_create_hosted_apt(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-@repository_create_hosted.command(name='docker')
+@repository_create_hosted.command(name='docker')  # type: ignore
 @util.add_options(repository_options.HOSTED)
 @util.add_options(repository_options.DOCKER)
 @util.with_nexus_client
@@ -261,7 +261,7 @@ def repository_create_hosted_docker(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-@repository_create_hosted.command(name='maven')
+@repository_create_hosted.command(name='maven')  # type: ignore
 @util.add_options(repository_options.HOSTED)
 @util.add_options(repository_options.MAVEN)
 @util.with_nexus_client
@@ -272,7 +272,7 @@ def repository_create_hosted_maven(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'hosted', **kwargs)
 
 
-@repository_create_hosted.command(name='yum')
+@repository_create_hosted.command(name='yum')  # type: ignore
 @util.add_options(repository_options.HOSTED)
 @click.option(
     '--depth', help='Depth where repodata folder(s) exist', default=0,
@@ -304,7 +304,7 @@ def repository_create_proxy():
     pass
 
 
-@repository_create_proxy.command(name='recipe')
+@repository_create_proxy.command(name='recipe')  # type: ignore
 @util.add_options(repository_options.PROXY)
 @util.with_nexus_client
 def repository_create_proxy_recipe(ctx: click.Context, **kwargs):
@@ -314,7 +314,7 @@ def repository_create_proxy_recipe(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'proxy', **kwargs)
 
 
-@repository_create_proxy.command(name='apt')
+@repository_create_proxy.command(name='apt')  # type: ignore
 @util.add_options(repository_options.PROXY)
 @util.add_options(repository_options.APT)
 @click.option(
@@ -327,7 +327,7 @@ def repository_create_proxy_apt(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'proxy', **kwargs)
 
 
-@repository_create_proxy.command(name='docker')
+@repository_create_proxy.command(name='docker')  # type: ignore
 @util.add_options(repository_options.PROXY)
 @util.add_options(repository_options.DOCKER)
 @click.option(
@@ -347,7 +347,7 @@ def repository_create_proxy_docker(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'proxy', **kwargs)
 
 
-@repository_create_proxy.command(name='maven')
+@repository_create_proxy.command(name='maven')  # type: ignore
 @util.add_options(repository_options.PROXY)
 @util.add_options(repository_options.MAVEN)
 @util.with_nexus_client
@@ -358,7 +358,7 @@ def repository_create_proxy_maven(ctx: click.Context, **kwargs):
     _create_repository(ctx, 'proxy', **kwargs)
 
 
-@repository_create_proxy.command(name='yum')
+@repository_create_proxy.command(name='yum')  # type: ignore
 @util.add_options(repository_options.PROXY)
 @util.with_nexus_client
 def repository_create_proxy_yum(ctx: click.Context, **kwargs):

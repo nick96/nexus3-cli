@@ -8,7 +8,7 @@ import requests
 import semver
 from clint.textui import progress
 from urllib.parse import urljoin
-from typing import Optional
+from typing import Dict, Iterator, Optional
 
 from nexuscli.nexus_config import NexusConfig
 from nexuscli import exception, nexus_util
@@ -20,7 +20,7 @@ from nexuscli.api.task import TaskCollection
 LOG = logging.getLogger(__name__)
 
 
-class NexusClient(object):
+class NexusClient:
     """
     A class to interact with Nexus 3's API.
 
@@ -29,13 +29,13 @@ class NexusClient(object):
     if unsuccessful, use defaults.
 
     Args:
-        config (NexusConfig): instance containing the configuration for the
+        config: instance containing the configuration for the
             Nexus service used by this instance.
     """
-    def __init__(self, config=None):
-        self.config = config or NexusConfig()
+    def __init__(self, config: NexusConfig = None):
+        self.config: NexusConfig = config or NexusConfig()
         self._local_sep = os.sep
-        self._server_version = None
+        self._server_version: Optional[str] = None
         self._cleanup_policies = None
         self._repositories = None
         self._scripts = None
@@ -74,7 +74,7 @@ class NexusClient(object):
         return self._server_version
 
     @property
-    def repositories(self) -> Optional[RepositoryCollection]:
+    def repositories(self) -> RepositoryCollection:
         """
         Instance of
         :class:`~nexuscli.api.repository.collection.RepositoryCollection`. This
@@ -86,7 +86,7 @@ class NexusClient(object):
         return self._repositories
 
     @property
-    def tasks(self) -> Optional[TaskCollection]:
+    def tasks(self) -> TaskCollection:
         """
         Instance of
         :class:`~nexuscli.api.task.collection.RepositoryCollection`. This
@@ -98,7 +98,7 @@ class NexusClient(object):
         return self._tasks
 
     @property
-    def cleanup_policies(self):
+    def cleanup_policies(self) -> CleanupPolicyCollection:
         """
         Instance of
         :class:`~nexuscli.api.cleanup_policy.collection.CleanupPolicyCollection`
@@ -110,7 +110,7 @@ class NexusClient(object):
         return self._cleanup_policies
 
     @property
-    def scripts(self):
+    def scripts(self) -> ScriptCollection:
         """
         Instance of
         :class:`~nexuscli.api.script.model.ScriptCollection`. This will
@@ -122,7 +122,7 @@ class NexusClient(object):
         return self._scripts
 
     @property
-    def rest_url(self):
+    def rest_url(self) -> str:
         """
         Full URL to the Nexus REST API, based on the ``url`` and ``version``
         from :attr:`config`.
@@ -132,7 +132,7 @@ class NexusClient(object):
         return urljoin(self.config.url, 'service/rest/')
 
     @property
-    def service_url(self):
+    def service_url(self) -> str:
         """
         Full URL to the Nexus REST API, based on the ``url`` and ``version``
         from :attr:`config`.
@@ -141,20 +141,18 @@ class NexusClient(object):
         """
         return urljoin(self.rest_url, self.config.api_version + '/')
 
-    def http_request(self, method, endpoint, service_url=None, **kwargs):
+    def http_request(
+            self, method: str, endpoint: str, service_url: Optional[str] = None,
+            **kwargs) -> requests.Response:
         """
         Performs a HTTP request to the Nexus REST API on the specified
         endpoint.
 
         :param method: one of ``get``, ``put``, ``post``, ``delete``.
-        :type endpoint: str
         :param endpoint: URI path to be appended to the service URL.
-        :type endpoint: str
         :param service_url: override the default URL to use for the request,
             which is created by joining :attr:`rest_url` and ``endpoint``.
-        :type service_url: str
         :param kwargs: as per :py:func:`requests.request`.
-        :rtype: requests.Response
         """
         service_url = service_url or self.service_url
         url = urljoin(service_url, endpoint)
@@ -171,27 +169,23 @@ class NexusClient(object):
 
         return response
 
-    def http_get(self, endpoint):
+    def http_get(self, endpoint: str) -> requests.Response:
         """
         Performs a HTTP GET request on the given endpoint.
 
         :param endpoint: name of the Nexus REST API endpoint.
-        :type endpoint: str
-        :rtype: requests.Response
         """
         return self.http_request('get', endpoint, stream=True)
 
-    def http_head(self, endpoint):
+    def http_head(self, endpoint: str) -> requests.Response:
         """
         Performs a HTTP HEAD request on the given endpoint.
 
         :param endpoint: name of the Nexus REST API endpoint.
-        :type endpoint: str
-        :rtype: requests.Response
         """
         return self.http_request('head', endpoint)
 
-    def _get_paginated(self, endpoint, **request_kwargs):
+    def _get_paginated(self, endpoint: str, **request_kwargs) -> Iterator[Dict]:
         """
         Performs a GET request using the given args and kwargs. If the response
         is paginated, the method will repeat the request, manipulating the
@@ -205,7 +199,6 @@ class NexusClient(object):
         :param request_kwargs: passed verbatim to the _request() method, except
             for the argument needed to paginate requests.
         :return: a generator that yields on response item at a time.
-        :rtype: typing.Iterator[dict]
         """
         response = self.http_request('get', endpoint, **request_kwargs)
         if response.status_code == 404:
@@ -233,52 +226,45 @@ class NexusClient(object):
             except json.decoder.JSONDecodeError:
                 raise exception.NexusClientAPIError(response.content)
 
-    def http_post(self, endpoint, **kwargs):
+    def http_post(self, endpoint: str, **kwargs) -> requests.Response:
         """
         Performs a HTTP POST request on the given endpoint.
 
         :param endpoint: name of the Nexus REST API endpoint.
-        :type endpoint: str
         :param kwargs: as per :py:func:`requests.request`.
-        :rtype: requests.Response
         """
         return self.http_request('post', endpoint, **kwargs)
 
-    def http_put(self, endpoint, **kwargs):
+    def http_put(self, endpoint: str, **kwargs) -> requests.Response:
         """
         Performs a HTTP PUT request on the given endpoint.
 
         :param endpoint: name of the Nexus REST API endpoint.
-        :type endpoint: str
         :param kwargs: as per :py:func:`requests.request`.
-        :rtype: requests.Response
         """
         return self.http_request('put', endpoint, **kwargs)
 
-    def http_delete(self, endpoint, **kwargs):
+    def http_delete(self, endpoint: str, **kwargs) -> requests.Response:
         """
         Performs a HTTP DELETE request on the given endpoint.
 
         :param endpoint: name of the Nexus REST API endpoint.
-        :type endpoint: str
         :param kwargs: as per :py:func:`requests.request`.
-        :rtype: requests.Response
         """
         return self.http_request('delete', endpoint, **kwargs)
 
-    def list(self, repository_path):
+    def list(self, repository_path: str) -> Iterator[Optional[str]]:
         """
         List all the artefacts, recursively, in a given ``repository_path``.
 
         :param repository_path: location on the repository service.
-        :type repository_path: str
         :return: artefacts under ``repository_path``.
-        :rtype: typing.Iterator[str]
         """
         for artefact in self.list_raw(repository_path):
             yield artefact.get('path')
 
-    def _list_raw_search(self, repository_name, path_filter, partial_match):
+    def _list_raw_search(
+            self, repository_name: str, path_filter: str, partial_match: bool) -> Iterator[Dict]:
         # TODO: use `group` attribute in raw repositories to speed-up queries
         query = {
             'repository': repository_name,
@@ -293,13 +279,11 @@ class NexusClient(object):
         return nexus_util.filtered_list_gen(
             raw_response, term=path_filter, partial_match=partial_match)
 
-    def list_raw(self, repository_path):
+    def list_raw(self, repository_path: str) -> Iterator[Dict]:
         """
         As per :meth:`list` but yields raw Nexus artefacts as dicts.
 
         :param repository_path: location on the repository service.
-        :type repository_path: str
-        :rtype: typing.Iterator[dict]
         """
         repo, directory, filename = nexus_util.split_component_path(repository_path)
         path_filter = ''  # matches everything
@@ -348,7 +332,6 @@ class NexusClient(object):
         repository.upload_file(src_dir, dst_dir, dst_file)
         return 1
 
-    # TODO: move the upload code to the repository model
     def upload(self, source, destination, recurse=True, flatten=False):
         """
         Process an upload. The source must be either a local file name or

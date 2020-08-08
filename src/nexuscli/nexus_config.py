@@ -122,7 +122,7 @@ class NexusConfig:
 
     @staticmethod
     @contextmanager
-    def _open_dump(dst_path) -> typing.IO:
+    def _open_dump(dst_path) -> typing.Iterator[typing.IO]:
         dst_path.touch(mode=0o600)
         try:
             with dst_path.open(mode='w+', encoding='utf-8') as fh:

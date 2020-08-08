@@ -7,7 +7,7 @@ from nexuscli.api.repository import collection as repository_collection
 from nexuscli.api.repository import model as repository_model
 from nexuscli.cli import (
     repository_options, root_commands, util, subcommand_repository,
-    subcommand_cleanup_policy, subcommand_script, subcommand_task)
+    subcommand_cleanup_policy, subcommand_realm, subcommand_script, subcommand_task)
 from nexuscli.cli.constants import ENV_VAR_PREFIX
 
 PACKAGE_VERSION = pkg_resources.get_distribution('nexus3-cli').version
@@ -40,9 +40,7 @@ def nexus_cli():
     default=nexus_config.DEFAULTS['x509_verify'], show_default=True,
     help='Verify server certificate', allow_from_autoenv=True, show_envvar=True)
 def login(**kwargs):
-    """
-    Login to Nexus server, saving settings to ~/.nexus-cli.
-    """
+    """Login to Nexus server, saving settings to ~/.nexus-cli."""
     root_commands.cmd_login(**kwargs)
 
 
@@ -113,18 +111,14 @@ def download(ctx: click.Context, **kwargs):
 # repository sub-commands
 @nexus_cli.group(cls=util.AliasedGroup)
 def repository():
-    """
-    Manage repositories.
-    """
+    """Manage repositories."""
     pass
 
 
 @repository.command(name='list')
 @util.with_nexus_client
 def repository_list(ctx: click.Context):
-    """
-    List all repositories.
-    """
+    """List all repositories."""
     subcommand_repository.cmd_list(ctx.obj)
 
 
@@ -132,9 +126,7 @@ def repository_list(ctx: click.Context):
 @click.argument('repository_name')
 @util.with_nexus_client
 def repository_show(ctx: click.Context, repository_name):
-    """
-    Show the configuration for REPOSITORY_NAME as JSON.
-    """
+    """Show the configuration for REPOSITORY_NAME as JSON."""
     subcommand_repository.cmd_show(ctx.obj, repository_name)
 
 
@@ -143,9 +135,7 @@ def repository_show(ctx: click.Context, repository_name):
 @click.confirmation_option()
 @util.with_nexus_client
 def repository_delete(ctx: click.Context, repository_name):
-    """
-    Delete REPOSITORY_NAME (but not its blobstore).
-    """
+    """Delete REPOSITORY_NAME (but not its blobstore)."""
     subcommand_repository.cmd_delete(ctx.obj, repository_name)
 
 
@@ -153,9 +143,7 @@ def repository_delete(ctx: click.Context, repository_name):
 # repository create sub-commands
 @repository.group(cls=util.AliasedGroup, name='create')
 def repository_create():
-    """
-    Create a repository.
-    """
+    """Create a repository."""
     pass
 
 
@@ -188,9 +176,7 @@ def _create_repository(ctx, repo_type, **kwargs) -> None:
         'recipe': repository_model.HostedRepository.RECIPES,
     }))
 def repository_create_group():
-    """
-    Create a group repository.
-    """
+    """Create a group repository."""
     pass
 
 
@@ -199,9 +185,7 @@ def repository_create_group():
 @click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group')
 @util.with_nexus_client
 def repository_create_group_recipe(ctx: click.Context, **kwargs):
-    """
-    Create a group repository.
-    """
+    """Create a group repository."""
     _create_repository(ctx, 'group', **kwargs)
 
 
@@ -218,9 +202,7 @@ def repository_create_group_recipe(ctx: click.Context, **kwargs):
         'recipe': repository_model.HostedRepository.RECIPES,
     }))
 def repository_create_hosted():
-    """
-    Create a hosted repository.
-    """
+    """Create a hosted repository."""
     pass
 
 
@@ -228,9 +210,7 @@ def repository_create_hosted():
 @util.add_options(repository_options.HOSTED)
 @util.with_nexus_client
 def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
-    """
-    Create a hosted repository.
-    """
+    """Create a hosted repository."""
     _create_repository(ctx, 'hosted', **kwargs)
 
 
@@ -243,9 +223,7 @@ def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
 @click.option('--passphrase', help='Passphrase for GPG key pair')
 @util.with_nexus_client
 def repository_create_hosted_apt(ctx: click.Context, **kwargs):
-    """
-    Create a hosted apt repository.
-    """
+    """Create a hosted apt repository."""
     kwargs['gpg_keypair'] = kwargs['gpg_keypair'].read()
     _create_repository(ctx, 'hosted', **kwargs)
 
@@ -255,9 +233,7 @@ def repository_create_hosted_apt(ctx: click.Context, **kwargs):
 @util.add_options(repository_options.DOCKER)
 @util.with_nexus_client
 def repository_create_hosted_docker(ctx: click.Context, **kwargs):
-    """
-    Create a hosted docker repository.
-    """
+    """Create a hosted docker repository."""
     _create_repository(ctx, 'hosted', **kwargs)
 
 
@@ -266,9 +242,7 @@ def repository_create_hosted_docker(ctx: click.Context, **kwargs):
 @util.add_options(repository_options.MAVEN)
 @util.with_nexus_client
 def repository_create_hosted_maven(ctx: click.Context, **kwargs):
-    """
-    Create a hosted maven repository.
-    """
+    """Create a hosted maven repository."""
     _create_repository(ctx, 'hosted', **kwargs)
 
 
@@ -279,9 +253,7 @@ def repository_create_hosted_maven(ctx: click.Context, **kwargs):
     type=click.IntRange(min=0, max=5, clamp=False))
 @util.with_nexus_client
 def repository_create_hosted_yum(ctx: click.Context, **kwargs):
-    """
-    Create a hosted yum repository.
-    """
+    """Create a hosted yum repository."""
     _create_repository(ctx, 'hosted', **kwargs)
 
 
@@ -298,9 +270,7 @@ def repository_create_hosted_yum(ctx: click.Context, **kwargs):
         'recipe': repository_model.ProxyRepository.RECIPES,
     }))
 def repository_create_proxy():
-    """
-    Create a proxy repository.
-    """
+    """Create a proxy repository."""
     pass
 
 
@@ -308,9 +278,7 @@ def repository_create_proxy():
 @util.add_options(repository_options.PROXY)
 @util.with_nexus_client
 def repository_create_proxy_recipe(ctx: click.Context, **kwargs):
-    """
-    Create a proxy repository.
-    """
+    """Create a proxy repository."""
     _create_repository(ctx, 'proxy', **kwargs)
 
 
@@ -321,9 +289,7 @@ def repository_create_proxy_recipe(ctx: click.Context, **kwargs):
     '--flat/--no-flat', default=False, help='Is this repository flat?')
 @util.with_nexus_client
 def repository_create_proxy_apt(ctx: click.Context, **kwargs):
-    """
-    Create a proxy apt repository.
-    """
+    """Create a proxy apt repository."""
     _create_repository(ctx, 'proxy', **kwargs)
 
 
@@ -341,9 +307,7 @@ def repository_create_proxy_apt(ctx: click.Context, **kwargs):
     help='Required for --index-type hub or custom')
 @util.with_nexus_client
 def repository_create_proxy_docker(ctx: click.Context, **kwargs):
-    """
-    Create a docker proxy repository.
-    """
+    """Create a docker proxy repository."""
     _create_repository(ctx, 'proxy', **kwargs)
 
 
@@ -352,9 +316,7 @@ def repository_create_proxy_docker(ctx: click.Context, **kwargs):
 @util.add_options(repository_options.MAVEN)
 @util.with_nexus_client
 def repository_create_proxy_maven(ctx: click.Context, **kwargs):
-    """
-    Create a maven proxy repository.
-    """
+    """Create a maven proxy repository."""
     _create_repository(ctx, 'proxy', **kwargs)
 
 
@@ -362,9 +324,7 @@ def repository_create_proxy_maven(ctx: click.Context, **kwargs):
 @util.add_options(repository_options.PROXY)
 @util.with_nexus_client
 def repository_create_proxy_yum(ctx: click.Context, **kwargs):
-    """
-    Create a yum proxy repository.
-    """
+    """Create a yum proxy repository."""
     _create_repository(ctx, 'proxy', **kwargs)
 
 
@@ -372,9 +332,7 @@ def repository_create_proxy_yum(ctx: click.Context, **kwargs):
 # cleanup_policy sub-commands
 @nexus_cli.group(cls=util.AliasedGroup)
 def cleanup_policy():
-    """
-    Manage clean-up policies.
-    """
+    """Manage clean-up policies."""
     pass
 
 
@@ -399,9 +357,7 @@ def cleanup_policy():
     help='Notes about your policy')
 @util.with_nexus_client
 def cleanup_policy_create(ctx: click.Context, **kwargs):
-    """
-    Create or update a cleanup policy called NAME.
-    """
+    """Create or update a cleanup policy called NAME."""
     # TODO: use a click type for this check?
     criteria_keys = {'downloaded', 'updated', 'regex'}
     util.move_to_key(kwargs, 'criteria', criteria_keys)
@@ -424,9 +380,7 @@ def cleanup_policy_list(ctx: click.Context):
 # script sub-commands
 @nexus_cli.group(cls=util.AliasedGroup)
 def script():
-    """
-    Manage scripts.
-    """
+    """Manage scripts."""
     pass
 
 
@@ -436,9 +390,7 @@ def script():
 @click.option('--script-type', default='groovy', help='Script type')
 @util.with_nexus_client
 def script_create(ctx: click.Context, name, file, **kwargs):
-    """
-    Create a new script called NAME from FILE.
-    """
+    """Create a new script called NAME from FILE."""
     subcommand_script.cmd_create(ctx.obj, name, file.read(), **kwargs)
 
 
@@ -446,18 +398,14 @@ def script_create(ctx: click.Context, name, file, **kwargs):
 @click.argument('name')
 @util.with_nexus_client
 def script_delete(ctx: click.Context, name):
-    """
-    Delete the script called NAME.
-    """
+    """Delete the script called NAME."""
     subcommand_script.cmd_delete(ctx.obj, name)
 
 
 @script.command(name='list')
 @util.with_nexus_client
 def script_list(ctx: click.Context):
-    """
-    List all scripts.
-    """
+    """List all scripts."""
     subcommand_script.cmd_list(ctx.obj)
 
 
@@ -466,9 +414,7 @@ def script_list(ctx: click.Context):
 @click.option('--script-arguments', '-a')
 @util.with_nexus_client
 def script_run(ctx: click.Context, name, script_arguments):
-    """
-    Run the script called NAME.
-    """
+    """Run the script called NAME."""
     subcommand_script.cmd_run(ctx.obj, name, script_arguments)
 
 
@@ -476,9 +422,7 @@ def script_run(ctx: click.Context, name, script_arguments):
 # tasks sub-commands
 @nexus_cli.group(cls=util.AliasedGroup)
 def task():
-    """
-    Task operations.
-    """
+    """Task operations."""
     pass
 
 
@@ -512,3 +456,40 @@ def task_run(ctx: click.Context, task_id):
 def task_stop(ctx: click.Context, task_id):
     """Stop running TASK_ID."""
     subcommand_task.cmd_stop(ctx.obj, task_id)
+
+
+#############################################################################
+# security sub-commands
+@nexus_cli.group(cls=util.AliasedGroup)
+def security():
+    """Security operations."""
+    pass
+
+
+@security.group(cls=util.AliasedGroup, name='realm')
+def security_realm():
+    """Security realms operations."""
+    pass
+
+
+@security_realm.command(name='activate')
+@click.argument('realm_id')
+@util.with_nexus_client
+def security_realm_activate(ctx: click.Context, realm_id):
+    """Activate REALM_ID"""
+    subcommand_realm.cmd_activate(ctx.obj, realm_id)
+
+
+@security_realm.command(name='active')
+@util.with_nexus_client
+def security_realm_active(ctx: click.Context):
+    """List active security realms as a JSON list."""
+    subcommand_realm.cmd_active(ctx.obj)
+
+
+@security_realm.command(name='available')
+@click.option('--json/--no-json', default=False, help='Print output as json')
+@util.with_nexus_client
+def security_realm_available(ctx: click.Context, **kwargs):
+    """List available security realms."""
+    subcommand_realm.cmd_available(ctx.obj, **kwargs)

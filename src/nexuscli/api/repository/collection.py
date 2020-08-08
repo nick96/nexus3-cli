@@ -208,6 +208,7 @@ class RepositoryCollection(BaseCollection):
 
         return json.loads(configuration)
 
+    # TODO: deprecate; replace with reset, as per realms/collection
     def refresh(self):
         """
         Refresh local list of repositories with latest from service. A raw

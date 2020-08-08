@@ -14,6 +14,7 @@ from nexuscli.nexus_config import NexusConfig
 from nexuscli import exception, nexus_util
 from nexuscli.api.cleanup_policy import CleanupPolicyCollection
 from nexuscli.api.repository import RepositoryCollection, Repository
+from nexuscli.api.security.realms import RealmCollection
 from nexuscli.api.script import ScriptCollection
 from nexuscli.api.task import TaskCollection
 
@@ -36,10 +37,12 @@ class NexusClient:
         self.config: NexusConfig = config or NexusConfig()
         self._local_sep = os.sep
         self._server_version: Optional[str] = None
-        self._cleanup_policies = None
-        self._repositories = None
-        self._scripts = None
-        self._tasks = None
+        # Collections
+        self._cleanup_policies: Optional[RealmCollection] = None
+        self._repositories: Optional[RepositoryCollection] = None
+        self._scripts: Optional[ScriptCollection] = None
+        self._security_realms: Optional[RealmCollection] = None
+        self._tasks: Optional[TaskCollection] = None
 
         self.repositories.refresh()
 
@@ -84,6 +87,16 @@ class NexusClient:
         if self._repositories is None:
             self._repositories = RepositoryCollection(client=self)
         return self._repositories
+
+    @property
+    def security_realms(self) -> RealmCollection:
+        """
+        This instance uses the existing instance of :class:`NexusClient` to communicate with the
+        Nexus service.
+        """
+        if self._security_realms is None:
+            self._security_realms = RealmCollection(client=self)
+        return self._security_realms
 
     @property
     def tasks(self) -> TaskCollection:
@@ -169,13 +182,13 @@ class NexusClient:
 
         return response
 
-    def http_get(self, endpoint: str) -> requests.Response:
+    def http_get(self, endpoint: str, **kwargs) -> requests.Response:
         """
         Performs a HTTP GET request on the given endpoint.
 
         :param endpoint: name of the Nexus REST API endpoint.
         """
-        return self.http_request('get', endpoint, stream=True)
+        return self.http_request('get', endpoint, stream=True, **kwargs)
 
     def http_head(self, endpoint: str) -> requests.Response:
         """

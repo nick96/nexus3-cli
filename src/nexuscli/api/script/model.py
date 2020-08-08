@@ -1,5 +1,6 @@
 from nexuscli import exception, nexus_util
 from nexuscli.api.base_collection import BaseCollection
+from nexuscli.api.base_model import BaseModel
 
 
 class ScriptCollection(BaseCollection):
@@ -136,6 +137,6 @@ class ScriptCollection(BaseCollection):
 
 
 # TODO: describe script and use/return from collection methods
-class Script:
+class Script(BaseModel):
     """A Class representing a Nexus 3 script."""
     pass

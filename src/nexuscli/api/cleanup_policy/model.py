@@ -1,4 +1,7 @@
-class CleanupPolicy(object):
+from nexuscli.api.base_model import BaseModel
+
+
+class CleanupPolicy(BaseModel):
     """
     Represents a Nexus Cleanup Policy.
 
@@ -31,22 +34,4 @@ class CleanupPolicy(object):
         regex (str): deletion criterion: only delete artefacts that match this
             regular expression
     """
-    def __init__(self, client, **kwargs):
-        self._client = client
-        # TODO: validate kwargs
-        self._raw = kwargs
-
-    @property
-    def configuration(self):
-        """
-        Nexus 3 Cleanup Policy representation as a python dict. The dict
-        returned by this property can
-        be converted to JSON for use with the ``nexus3-cli-cleanup-policy``
-        groovy script created by the
-        :py:class:`~nexuscli.api.cleanup_policy.collection.CleanupPolicyCollection`
-        methods.
-
-        :return: cleanup policy as a dict
-        :rtype: dict
-        """
-        return self._raw
+    pass

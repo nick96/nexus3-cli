@@ -7,6 +7,7 @@ DEFAULT_BLOB_STORE_NAME = 'default'
 DEFAULT_STRICT_CONTENT = False
 
 
+# TODO: inherit nexuscli.api.base_model.BaseModel`
 class BaseRepository:
     """
     The base class for Nexus repositories.

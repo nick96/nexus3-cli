@@ -7,7 +7,7 @@ OSS 3](https://www.sonatype.com/download-oss-sonatype).
 
 1. Compatible with [Nexus 3 OSS](https://www.sonatype.com/download-oss-sonatype)
    1. [Nexus versions tested](https://gitlab.com/thiagocsf/nexus3-cli/-/blob/master/.gitlab-ci.yml#L103-116)
-1. Python API and command-line support
+1. Python API and command-line support.
 1. Artefact management: list, delete, bulk upload and download.
 1. Repository management:
    1. Create hosted and proxy.
@@ -16,6 +16,8 @@ OSS 3](https://www.sonatype.com/download-oss-sonatype).
    1. Delete.
 1. Groovy script management: list, upload, delete, run.
 1. Clean-up policy management: create, list.
+1. Task management: list, run, show stop.
+1. Security management: realms.
 
 The actions above are performed using the Nexus REST API if the endpoint is
 available, otherwise a groovy script is used.

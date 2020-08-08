@@ -1,3 +1,5 @@
+from typing import Optional
+
 import semver
 
 from nexuscli.api.repository.base_models.base_repository import BaseRepository
@@ -30,29 +32,23 @@ class Repository(BaseRepository):
         - `apt
           <https://help.sonatype.com/repomanager3/formats/apt-repositories>`_
     :param name: name of the repository.
-    :type name: str
     :param nexus_client: the :class:`~nexuscli.nexus_client.NexusClient`
         instance that will be used to perform operations against the Nexus 3
         service. You must provide this at instantiation or set it before
         calling any methods that require connectivity to Nexus.
-    :type nexus_client: nexuscli.nexus_client.NexusClient
     :param recipe: format (recipe) of the new repository. Must be one of
         :py:attr:`RECIPES`. See Nexus documentation for details.
-    :type recipe: str
     :param blob_store_name: name of an existing blob store; 'default'
         should work on most installations.
-    :type blob_store_name: str
     :param strict_content_type_validation: Whether to validate file
         extension against its content type.
-    :type strict_content_type_validation: bool
     :param cleanup_policy: name of an existing repository clean-up policy.
-    :type cleanup_policy: str
     """
 
     RECIPES = ('bower', 'npm', 'nuget', 'pypi', 'raw', 'rubygems')
     TYPE = None
 
-    def __init__(self, name, cleanup_policy=None, **kwargs):
+    def __init__(self, name: str, cleanup_policy: Optional[str] = None, **kwargs):
         super().__init__(name, **kwargs)
         self._cleanup_policy = cleanup_policy
 

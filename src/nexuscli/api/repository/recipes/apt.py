@@ -9,9 +9,7 @@ class _AptRepository(Repository):
     DEFAULT_RECIPE = 'apt'
     RECIPES = ('apt',)
 
-    def __init__(self, name,
-                 distribution='bionic',
-                 **kwargs):
+    def __init__(self, name: str, distribution: str = 'bionic', **kwargs):
         self.distribution = distribution
         kwargs.update({'recipe': 'apt'})
         super().__init__(name, **kwargs)
@@ -30,10 +28,7 @@ class _AptRepository(Repository):
 
 
 class AptHostedRepository(_AptRepository, HostedRepository):
-    def __init__(self, name,
-                 gpg_keypair: str = None,
-                 passphrase=None,
-                 **kwargs):
+    def __init__(self, name: str, gpg_keypair: str = None, passphrase: str = None, **kwargs):
         self.gpg_keypair = gpg_keypair
         self.passphrase = passphrase
         super().__init__(name, **kwargs)

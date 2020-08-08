@@ -23,7 +23,7 @@ class TaskCollection(BaseCollection):
         return resp.json()
 
     @util.with_min_version('3.12.1')
-    def show(self, task_id) -> dict:
+    def show(self, task_id: str) -> dict:
         """
         Get a single task by id
 
@@ -40,7 +40,7 @@ class TaskCollection(BaseCollection):
         return resp.json()
 
     @util.with_min_version('3.12.1')
-    def run(self, task_id) -> None:
+    def run(self, task_id: str) -> None:
         """
         Run a task by id
 
@@ -60,7 +60,7 @@ class TaskCollection(BaseCollection):
             raise exception.NexusClientAPIError(resp.content)
 
     @util.with_min_version('3.12.1')
-    def stop(self, task_id) -> None:
+    def stop(self, task_id: str) -> None:
         """
         Stop a running task by id
 

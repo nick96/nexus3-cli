@@ -1,3 +1,6 @@
+from typing import Optional
+
+import nexuscli  # noqa: F401; for mypy
 from nexuscli.api.repository.recipes import validations
 
 DEFAULT_BLOB_STORE_NAME = 'default'
@@ -9,12 +12,10 @@ class BaseRepository:
     The base class for Nexus repositories.
 
     :param name: name of the repository.
-    :type name: str
     :param nexus_client: the :class:`~nexuscli.nexus_client.NexusClient`
         instance that will be used to perform operations against the Nexus 3
         service. You must provide this at instantiation or set it before
         calling any methods that require connectivity to Nexus.
-    :type nexus_client: nexuscli.nexus_client.NexusClient
     :param recipe: format (recipe) of the new repository. Must be one of
         :py:attr:`RECIPES`. See Nexus documentation for details.
     :type recipe: str
@@ -35,17 +36,19 @@ class BaseRepository:
     DEFAULT_RECIPE = None
     """If a recipe is not given during initialisation, use this one as the default"""
 
-    def __init__(self, name,
-                 nexus_client=None,
-                 recipe=None,
-                 blob_store_name=DEFAULT_BLOB_STORE_NAME,
-                 strict_content_type_validation=DEFAULT_STRICT_CONTENT,
-                 ):
+    def __init__(self, name: str,
+                 nexus_client: Optional['nexuscli.nexus_client.NexusClient'] = None,
+                 recipe: Optional[str] = None,
+                 blob_store_name: str = DEFAULT_BLOB_STORE_NAME,
+                 strict_content_type_validation: bool = DEFAULT_STRICT_CONTENT):
         self.name = name
         self.nexus_client = nexus_client
         # TODO: remove this the RECIPES attributes; no longer needed as there's
         #   a unique class for each recipe/type.
-        self.recipe = (recipe or self.DEFAULT_RECIPE).lower()
+        self.recipe: Optional[str] = (recipe or self.DEFAULT_RECIPE)
+        if self.recipe:
+            self.recipe = self.recipe.lower()
+
         self.blob_store_name = blob_store_name
         self.strict_content = strict_content_type_validation
 
@@ -54,7 +57,7 @@ class BaseRepository:
     def __repr__(self):
         return f'{self.__class__.__name__}-{self.name}'
 
-    def __validate_params(self):
+    def __validate_params(self) -> None:
         validations.ensure_known('recipe', self.recipe, self.RECIPES)
 
     @property

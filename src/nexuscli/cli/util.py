@@ -92,10 +92,10 @@ def rename_keys(mydict: dict, rename_map: dict):
 
 
 def _get_client_kwargs() -> Optional[Dict[str, str]]:
-    def _without_prefix(name):
+    def _without_prefix(name) -> str:
         return name[len(constants.ENV_VAR_PREFIX) + 1:].lower()
 
-    def _with_prefix(names):
+    def _with_prefix(names) -> List[str]:
         return [f'{constants.ENV_VAR_PREFIX}_{x}' for x in names]
 
     # This seemed an easier implementation compared to "exposing" the cli.login options to all the
@@ -116,13 +116,12 @@ def _get_client_kwargs() -> Optional[Dict[str, str]]:
                     config_kwargs[_without_prefix(env_var)] = os.environ[env_var]
 
             return config_kwargs
+    return None
 
 
-def get_client():
+def get_client() -> NexusClient:
     """
     Returns a Nexus Client instance. Prints a warning if the configuration file doesn't exist.
-
-    :rtype: nexuscli.nexus_client.NexusClient
     """
     maybe_config = _get_client_kwargs()
     if maybe_config:

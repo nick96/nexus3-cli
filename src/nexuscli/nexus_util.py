@@ -57,18 +57,18 @@ def filtered_list_gen(raw_response, term=None, partial_match=True):
         2. the `path` value starts with starts_with (if provided)
 
     >>> r = [{
-    >>>     'checksum': {
-    >>>         'md5': 'd94b865aa7620c46ef8faef7059a311c',
-    >>>         'sha1': '2186934d880cf24dd9ecc578335e290026695522',
-    >>>         'sha256': 'b7bb3424a6a6(...)4113bc38fd7807528481a8ffe3cf',
-    >>>         'sha512': 'e7806f3caa3e(...)3caeb9bbc54bbde286c07f837fdc'
-    >>>     },
-    >>>     'downloadUrl': 'http://nexus/repository/repo_name/a/file.ext',
-    >>>     'format': 'yum',
-    >>>     'id': 'Y2xvdWRlcmEtbWFuYWdlcj(...)mRiNWU0YjllZWQzMg',
-    >>>     'path': 'a/fake.rpm',
-    >>>     'repository': 'cloudera-manager'}]
-    >>>
+    >>>         'checksum': {
+    >>>             'md5': 'd94b865aa7620c46ef8faef7059a311c',
+    >>>             'sha1': '2186934d880cf24dd9ecc578335e290026695522',
+    >>>             'sha256': 'b7bb3424a6a6(...)4113bc38fd7807528481a8ffe3cf',
+    >>>             'sha512': 'e7806f3caa3e(...)3caeb9bbc54bbde286c07f837fdc'
+    >>>         },
+    >>>         'downloadUrl': 'http://nexus/repository/repo_name/a/file.ext',
+    >>>         'format': 'yum',
+    >>>         'id': 'Y2xvdWRlcmEtbWFuYWdlcj(...)mRiNWU0YjllZWQzMg',
+    >>>         'path': 'a/fake.rpm',
+    >>>         'repository': 'cloudera-manager'
+    >>> }]
     >>> for i in filtered_list_gen(r, starts_with='a/fake.rpm')
     >>>     print(i['path'])
     a/fake.rpm

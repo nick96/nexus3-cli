@@ -1,11 +1,17 @@
-# -*- coding: utf-8 -*-
 import hashlib
+import logging
 import mmap
 import os
+import pathlib
 import pkg_resources
+from typing import Tuple
 
 from nexuscli import exception
-from nexuscli.api.repository import Repository
+
+LOG = logging.getLogger(__name__)
+
+REMOTE_PATH_SEPARATOR = '/'
+"""The character used by the Nexus server as a path separator"""
 
 
 def _resource_filename(resource_name):
@@ -154,7 +160,7 @@ def has_same_hash(artefact, filepath):
     return False
 
 
-def ensure_exists(path, is_dir=False):
+def ensure_exists(path: pathlib.Path, is_dir: bool = False):
     """
     Ensures a path exists.
 
@@ -163,6 +169,7 @@ def ensure_exists(path, is_dir=False):
     :param is_dir: whether the path is a directory.
     :type is_dir: bool
     """
+    LOG.debug('Creating %s, is_dir=%s', path, is_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
     if is_dir:
         path.mkdir(exist_ok=True)
@@ -170,7 +177,7 @@ def ensure_exists(path, is_dir=False):
         path.touch()
 
 
-def _pop_repository(component_path):
+def pop_repository(component_path):
     """
     Helper for split_component_path. Returns the repository and the
     remainder of the component_path as a path_fragments list.
@@ -180,7 +187,7 @@ def _pop_repository(component_path):
     :return: tuple of (repository, path_fragments)
     :rtype: tuple(str, list)
     """
-    path_fragments = component_path.split(Repository.REMOTE_PATH_SEPARATOR)
+    path_fragments = component_path.split(REMOTE_PATH_SEPARATOR)
     try:
         repository = path_fragments.pop(0)
         # no cheating!
@@ -205,7 +212,7 @@ def _pop_filename(component_path, path_fragments):
     """
     filename = None
     try:
-        if not component_path.endswith(Repository.REMOTE_PATH_SEPARATOR):
+        if not component_path.endswith(REMOTE_PATH_SEPARATOR):
             filename = path_fragments.pop()
             if not filename or filename == '.':
                 raise IndexError
@@ -223,9 +230,9 @@ def _pop_directory(path_fragments):
     :return: directory or None, if not available.
     :rtype: str
     """
-    directory = Repository.REMOTE_PATH_SEPARATOR.join(path_fragments)
+    directory = REMOTE_PATH_SEPARATOR.join(path_fragments)
     # for consistency
-    if directory.endswith(Repository.REMOTE_PATH_SEPARATOR):
+    if directory.endswith(REMOTE_PATH_SEPARATOR):
         directory = directory[:-1]
     # nice try, user but no cigar
     if not directory or directory == '.':
@@ -265,8 +272,78 @@ def split_component_path(component_path):
         ``filename`` is set to :py:obj:`None`.
     :rtype: tuple[str, str, str]
     """
-    repository, path_fragments = _pop_repository(component_path)
+    repository, path_fragments = pop_repository(component_path)
     filename = _pop_filename(component_path, path_fragments)
     directory = _pop_directory(path_fragments)
 
     return repository, directory, filename
+
+
+def get_dst_path_and_file(source: str, destination: str) -> Tuple[str, str]:
+    """
+    Given a source file and destination path, return a destination path and destination file name.
+
+    :param source: the source file path. The name of this file is used as the returned file name
+        when the given destination is a directory.
+    :param destination: the destination path. When this is a path to a file, the returned
+        destination is the base path of this value and the returned file name matches this one.
+    """
+    destination = os.path.normpath(destination or REMOTE_PATH_SEPARATOR)
+
+    if destination.endswith(REMOTE_PATH_SEPARATOR):
+        dst_file = os.path.basename(source)
+    else:
+        dst_file = os.path.basename(destination)
+        destination = os.path.dirname(destination)
+
+    return destination, dst_file
+
+
+def remote_path_to_local(remote_src, local_dst, flatten, create=True):
+    """
+    Takes the remote path of an asset (without the repository name), the
+    desired destination in the local file system, and creates the fully
+    qualified path according to the instance settings.
+
+    If self.flatten is True, the remote_path isn't reproduced locally.
+
+    If the remote is a directory, we'll always assume the destination is
+    also a directory, even if it doesn't end with a /.
+
+    :param remote_src: path to the artefact as reported by the artefact
+        service (i.e.: the `path` attribute of an asset object).
+    :param local_dst: desired location in the local filesystem for the
+        remote_path.
+    :param create: whether or not to create the local destination file or
+        directory.
+    :return: the local path to be used.
+    """
+    # FIXME: use of multiple .. in the local_dst isn't resolved correctly
+    remote_isdir = remote_src.endswith(REMOTE_PATH_SEPARATOR)
+    # force destination to be a directory if the remote is a directory
+    destination_isdir = (remote_isdir or
+                         local_dst.endswith('.') or
+                         local_dst.endswith('..') or
+                         local_dst.endswith(os.sep))
+    local_relative = remote_src.replace(REMOTE_PATH_SEPARATOR, os.sep)
+    if flatten:
+        local_relative = os.path.basename(local_relative)
+    # remote=file, destination=file
+    if not (remote_isdir or destination_isdir):
+        # if files are given, rename the source to match destination
+        local_relative_dir = os.path.dirname(local_relative)
+        dst_file_name = os.path.basename(local_dst)
+        local_dst = os.path.dirname(local_dst)
+        if flatten:
+            local_relative = dst_file_name
+        else:
+            local_relative = os.path.join(
+                local_relative_dir, dst_file_name)
+
+    destination_path = pathlib.Path(local_dst)
+    local_path = destination_path.joinpath(local_relative)
+
+    if create:
+        ensure_exists(local_path, is_dir=remote_isdir)
+
+    return local_path.absolute()

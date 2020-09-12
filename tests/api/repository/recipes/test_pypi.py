@@ -11,14 +11,14 @@ def test_upload_error(upload_file_ensure_raises_api_error):
 @pytest.mark.integration
 @pytest.mark.incremental
 class TestPypiHostedRepository:
-    def test_create(self, repository_factory):
+    def test_create(self, nexus_client, repository_factory):
         repository = repository_factory(PypiHostedRepository)
-        repository.nexus_client.repositories.create(repository)
+        nexus_client.repositories.create(repository)
 
     def test_upload(self, repository_factory):
         repository = repository_factory(PypiHostedRepository)
         repository.upload_file('tests/fixtures/pypi/example-0.0.0.tar.gz')
 
-    def test_delete(self, repository_factory):
+    def test_delete(self, nexus_client, repository_factory):
         repository = repository_factory(PypiHostedRepository)
-        repository.nexus_client.repositories.delete(repository.name)
+        nexus_client.repositories.delete(repository.name)

@@ -13,15 +13,27 @@ def test_create_type_error(repository_collection, faker):
 
 
 def test_create_repository_error(repository_collection, mocker):
-    """
-    Ensure the incorrect response from Nexus results in the expected exception
-    """
+    """Ensure the incorrect response from Nexus results in the expected exception."""
     mocker.patch('json.dumps')
-    dummy_repo = repository.model.RawHostedRepository(
-        'dummy', nexus_client=repository_collection._client)
+    dummy_repo = repository.model.RawHostedRepository(name='dummy')
+    repository_collection.run_script = mocker.Mock(return_value={})
 
     with pytest.raises(exception.NexusClientCreateRepositoryError):
         repository_collection.create(dummy_repo)
+
+
+def test_repository_init(nexus_mock_client, mocker):
+    """Ensure the property call triggers an installation of groovy script dependencies"""
+    nexus_mock_client._scripts = mocker.PropertyMock()
+    nexus_mock_client._repositories = None  # force a reload on instantiation
+    x_calls = [
+        mocker.call('nexus3-cli-repository-delete'),
+        mocker.call('nexus3-cli-repository-get'),
+        mocker.call('nexus3-cli-repository-create')]
+
+    nexus_mock_client.repositories  # force class instantiation
+
+    nexus_mock_client.scripts.create_if_missing.assert_has_calls(x_calls, any_order=True)
 
 
 @pytest.mark.parametrize('repo_class, response', itertools.product(
@@ -30,9 +42,12 @@ def test_create_repository_error(repository_collection, mocker):
 def test_create_repository(
         repo_class, response, nexus_mock_client, faker, mocker):
     """Ensure the method behaves as expected for all Repository classes"""
+    if repo_class.TYPE == 'group' and repo_class.RECIPE_NAME in ['docker', 'maven', 'yum']:
+        pytest.skip('Not Implemented')
+
     x_configuration = faker.pydict()
-    mocker.patch('nexuscli.nexus_client.ScriptCollection')
-    nexus_mock_client.scripts.run.return_value = response
+    run_script = mocker.patch.object(
+        nexus_mock_client.repositories, 'run_script', return_value=response)
 
     json_dumps = mocker.patch('json.dumps', return_value=x_configuration)
 
@@ -44,7 +59,7 @@ def test_create_repository(
     if repo_class.TYPE == 'proxy':
         kwargs['remote_url'] = faker.url()
 
-    repo = repo_class(faker.word(), **kwargs)
+    repo = repo_class(None, name=faker.word(), **kwargs)
 
     if response.get('result') == 'null':
         nexus_mock_client.repositories.create(repo)
@@ -52,10 +67,8 @@ def test_create_repository(
         with pytest.raises(exception.NexusClientCreateRepositoryError):
             nexus_mock_client.repositories.create(repo)
 
-    nexus_mock_client.scripts.create_if_missing.assert_called_once()
     json_dumps.assert_called_with(repo.configuration)
-    nexus_mock_client.scripts.run.assert_called_with(
-        'nexus3-cli-repository-create', data=json_dumps.return_value)
+    run_script.assert_called_with('nexus3-cli-repository-create', data=json_dumps.return_value)
 
 
 def test_delete(nexus_mock_client, faker, mocker):
@@ -64,13 +77,12 @@ def test_delete(nexus_mock_client, faker, mocker):
     with the configuration for the repository to be created as argument. Also
     test that the result is correctly interpreted for success/failure.
     """
-    mocker.patch('nexuscli.nexus_client.ScriptCollection')
+    nexus_mock_client._scripts = mocker.PropertyMock()
     x_name = faker.word()
 
     nexus_mock_client.repositories.delete(x_name)
 
-    nexus_mock_client.scripts.create_if_missing.assert_called_once()
-    nexus_mock_client.scripts.run.assert_called_with(
+    nexus_mock_client.repositories.run_script.assert_called_with(
         'nexus3-cli-repository-delete', data=x_name)
 
 
@@ -98,33 +110,6 @@ def test_get_raw_by_name_error(nexus_client, faker):
     """Ensure the method raises an exception when a repo is not found"""
     with pytest.raises(exception.NexusClientInvalidRepository):
         nexus_client.repositories.get_raw_by_name(faker.pystr())
-
-
-def test_refresh(nexus_mock_client):
-    """
-    Ensure the method retrieves latest repositories and sets the class
-    attribute.
-    """
-    repositories = nexus_mock_client.repositories.raw_list()
-    x_repositories = nexus_mock_client.http_request.return_value._json
-
-    nexus_mock_client.http_request.assert_called_with(
-        'get', 'repositories', stream=True)
-    assert repositories == x_repositories
-
-
-def test_refresh_error(nexus_mock_client):
-    """
-    Ensure the method does't modify the existing repositories attribute when
-    the client request fails.
-    """
-    nexus_mock_client.http_request.return_value.status_code = 400
-    nexus_mock_client.repositories._repositories_json = None
-
-    with pytest.raises(exception.NexusClientAPIError):
-        nexus_mock_client.repositories.refresh()
-
-    assert nexus_mock_client.repositories._repositories_json is None
 
 
 @pytest.mark.integration

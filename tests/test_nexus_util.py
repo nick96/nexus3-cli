@@ -1,4 +1,5 @@
 import itertools
+import os
 
 import pytest
 
@@ -132,3 +133,86 @@ def test_split_component_path_errors(component_path, x_error):
         nexus_util.split_component_path(component_path)
 
     assert x_error in str(e.value)
+
+
+@pytest.mark.parametrize('flatten, remote, destination, x_local_path', [
+    # no rename (file to dir)
+    (False, 'file', '.',            '_TMP_file'),
+    (False, 'file', './',           '_TMP_file'),
+    (False, 'file', '..',           '_TMP_../file'),
+    (False, 'file', '../',          '_TMP_../file'),
+    (False, 'file', '/',            '/file'),
+    (False, 'file', '/dir/',        '/dir/file'),
+    (False, 'file', 'dir/',         '_TMP_dir/file'),
+    (False, 'file', 'dir/sub/',     '_TMP_dir/sub/file'),
+    (False, 'file', '/dir/sub/',    '/dir/sub/file'),
+
+    # rename (file to file)
+    (False, 'file', 'file2',        '_TMP_file2'),
+    (False, 'file', './file2',      '_TMP_file2'),
+    (False, 'file', '/file2',       '/file2'),
+    (False, 'file', '/dir/file2',   '/dir/file2'),
+    (False, 'file', 'dir/file2',    '_TMP_dir/file2'),
+
+    # remote has directory, no rename
+    (False, 'dir/file', '.',         '_TMP_dir/file'),
+    (True,  'dir/file', '.',         '_TMP_file'),
+    (False, 'dir/file', './',        '_TMP_dir/file'),
+    (True,  'dir/file', './',        '_TMP_file'),
+    (False, 'dir/file', '..',        '_TMP_../dir/file'),
+    (True,  'dir/file', '..',        '_TMP_../file'),
+    (False, 'dir/file', '../',       '_TMP_../dir/file'),
+    (True,  'dir/file', '../',       '_TMP_../file'),
+    (False, 'dir/file', '/',         '/dir/file'),
+    (True,  'dir/file', '/',         '/file'),
+    (False, 'dir/file', '/dir/',     '/dir/dir/file'),
+    (True,  'dir/file', '/dir/',     '/dir/file'),
+    (False, 'dir/file', 'dir/',      '_TMP_dir/dir/file'),
+    (True,  'dir/file', 'dir/',      '_TMP_dir/file'),
+    (False, 'dir/file', 'dir/sub/',  '_TMP_dir/sub/dir/file'),
+    (True,  'dir/file', 'dir/sub/',  '_TMP_dir/sub/file'),
+    (False, 'dir/file', '/dir/sub/', '/dir/sub/dir/file'),
+    (True,  'dir/file', '/dir/sub/', '/dir/sub/file'),
+
+    # remote has directory, rename
+    (False, 'dir1/file', 'file2',      '_TMP_dir1/file2'),
+    (True,  'dir1/file', 'file2',       '_TMP_file2'),
+    (False, 'dir1/file', './file2',     '_TMP_dir1/file2'),
+    (True,  'dir1/file', './file2',     '_TMP_file2'),
+    (False, 'dir1/file', '/file2',      '/dir1/file2'),
+    (True,  'dir1/file', '/file2',      '/file2'),
+    (False, 'dir1/file', '/dir2/file2', '/dir2/dir1/file2'),
+    (True,  'dir1/file', '/dir2/file2', '/dir2/file2'),
+    (False, 'dir1/file', 'dir2/file2',  '_TMP_dir2/dir1/file2'),
+    (True,  'dir1/file', 'dir2/file2',  '_TMP_dir2/file2'),
+])
+def test_remote_path_to_local(flatten, remote, destination, x_local_path, tmpdir):
+    """
+    Ensure the method correctly resolves a remote path to a local destination,
+    following the instance setting for flatten.
+    """
+    # add cwd to expected result as the fixture gives it as relative but the
+    # method always returns an absolute path
+    if x_local_path.find('_TMP_') == 0:
+        x_local_path = x_local_path.replace('_TMP_', str(tmpdir) + os.sep)
+
+    with tmpdir.as_cwd():
+        local_path = nexus_util.remote_path_to_local(remote, destination, flatten, create=False)
+
+    assert str(local_path) == x_local_path
+
+
+@pytest.mark.parametrize('is_dst_dir, flatten', ([False, True], [False, True]))
+def test_remote_path_to_local_create(faker, flatten, is_dst_dir, tmpdir):
+    """Ensure the method creates a file or directory, according to given parameters"""
+    # use a relative path as destination; another test covers abs/rel paths
+    local_dst = faker.file_path(depth=faker.random_int(2, 10))[1:]
+    assert_type = os.path.isfile
+    if is_dst_dir:
+        assert_type = os.path.isdir
+        local_dst += os.sep
+
+    with tmpdir.as_cwd():
+        local_path = nexus_util.remote_path_to_local('a', local_dst, flatten=flatten, create=True)
+        assert assert_type(local_dst)
+        assert os.path.isfile(local_path)

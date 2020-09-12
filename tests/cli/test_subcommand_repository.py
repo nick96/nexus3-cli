@@ -3,6 +3,7 @@ import itertools
 
 from nexuscli import exception
 from nexuscli.api import repository
+from nexuscli.api.repository import collection
 from nexuscli.cli import nexus_cli, subcommand_repository
 
 
@@ -19,22 +20,21 @@ def test_list(cli_runner, mocker):
 
 @pytest.mark.parametrize(
     'repo_format, w_policy, strict, c_policy', itertools.product(
-        repository.model.HostedRepository.RECIPES,  # format
+        [x.RECIPE_NAME for x in collection.get_classes_by_type('hosted')  # format
+         if x.RECIPE_NAME != 'apt'],  # apt uses custom test
         repository.model.HostedRepository.WRITE_POLICIES,  # w_policy
         ['--no-strict-content', '--strict-content'],  # strict
         ['', '--cleanup-policy=c_policy'],  # c_policy
     ))
 @pytest.mark.integration
-def test_create_hosted(
-        nexus_client, cli_runner, repo_format, w_policy, strict, c_policy):
-    repo_name = pytest.helpers.repo_name(
-        'hosted', repo_format, w_policy, strict, c_policy)
+def test_create_hosted(nexus_client, cli_runner, repo_format, w_policy, strict, c_policy):
+    repo_name = pytest.helpers.repo_name('hosted', repo_format, w_policy, strict, c_policy)
 
     create_cmd = (
         f'repository create hosted {repo_format} {repo_name} '
         f'--write-policy={w_policy} {strict} {c_policy}')
 
-    result = cli_runner.invoke(nexus_cli, create_cmd)
+    result = cli_runner.invoke(nexus_cli, create_cmd, catch_exceptions=False)
 
     assert result.output == ''
     assert result.exit_code == exception.CliReturnCode.SUCCESS.value
@@ -43,7 +43,8 @@ def test_create_hosted(
 
 @pytest.mark.parametrize(
     'recipe, strict', itertools.product(
-        repository.model.GroupRepository.RECIPES,  # format
+        [x.RECIPE_NAME for x in collection.get_classes_by_type('group')  # format
+         if x.RECIPE_NAME not in ['docker', 'maven', 'yum']],  # need custom test
         ['--no-strict-content', '--strict-content'],  # strict
     ))
 @pytest.mark.integration
@@ -115,7 +116,8 @@ def test_create_hosted_yum(
 
 @pytest.mark.parametrize(
     'repo_format, strict, c_policy, remote_auth_type', itertools.product(
-        repository.model.ProxyRepository.RECIPES,  # format
+        [x.RECIPE_NAME for x in collection.get_classes_by_type('proxy')  # format
+         if x.RECIPE_NAME not in ['apt', 'docker', 'maven']],  # need custom test
         ['--no-strict-content', '--strict-content'],  # strict
         ['', '--cleanup-policy=c_policy'],  # c_policy
         [None, 'username']  # remote-auth-type

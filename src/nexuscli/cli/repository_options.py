@@ -8,7 +8,7 @@ CLEANUP = [
 ]
 
 COMMON = [
-    click.argument('repository-name'),
+    click.argument('name'),
     click.option('--blob-store-name', default='default',
                  help='Blobstore name to use with new repository'),
     click.option('--strict-content/--no-strict-content', default=False,

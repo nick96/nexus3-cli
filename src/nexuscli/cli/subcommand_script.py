@@ -6,12 +6,10 @@ from nexuscli.cli import constants
 
 def cmd_list(nexus_client):
     """Performs ``nexus3 script list``"""
-    scripts = nexus_client.scripts.list()
-
     table = Texttable(max_width=constants.TTY_MAX_WIDTH)
     table.add_row(['Name', 'Type', 'Content'])
     table.set_deco(Texttable.HEADER | Texttable.HLINES)
-    for script in scripts:
+    for script in nexus_client.scripts.list:
         content = script['content']
         if len(content) > 40:
             content = f'{content[:40]}...'

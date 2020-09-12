@@ -2,7 +2,6 @@ import json
 from texttable import Texttable
 
 from nexuscli import exception
-from nexuscli.api import repository
 from nexuscli.cli import constants
 
 
@@ -21,18 +20,12 @@ def cmd_list(nexus_client):
     return exception.CliReturnCode.SUCCESS.value
 
 
-def cmd_create(ctx, repo_type=None, repository_name=None, **kwargs):
+def cmd_create(ctx, repo_type=None, **kwargs):
     """Performs ``nexus3 repository create`` commands"""
     nexus_client = ctx.obj
-    kwargs['nexus_client'] = nexus_client
-    recipe = kwargs["recipe"]
     enable_health_check = kwargs.pop('health_check', False)
 
-    Repository = repository.collection.get_repository_class({
-        'recipeName': f'{recipe}-{repo_type}'})
-
-    r = Repository(repository_name, **kwargs)
-
+    r = nexus_client.repositories.new(repo_type, **kwargs)
     nexus_client.repositories.create(r)
 
     # only available for proxy repositories; relying on Click to not set this for hosted, group.

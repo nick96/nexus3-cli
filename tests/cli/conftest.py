@@ -92,12 +92,12 @@ def member_repos_factory(nexus_client, faker):
         hosted_class = repository.collection.get_repository_class(
             {'recipeName': f'{recipe}-hosted'})
         hosted_name = repo_name('hosted', recipe)
-        r = hosted_class(hosted_name, nexus_client=nexus_client)
+        r = hosted_class(nexus_client.http, name=hosted_name)
         nexus_client.repositories.create(r)
 
         proxy_class = repository.collection.get_repository_class({'recipeName': f'{recipe}-proxy'})
         proxy_name = repo_name('proxy', recipe)
-        r = proxy_class(proxy_name, nexus_client=nexus_client, remote_url=faker.url())
+        r = proxy_class(nexus_client.http, name=proxy_name, remote_url=faker.url())
         nexus_client.repositories.create(r)
 
         member_names_args = f'--member-names {hosted_name} --member-names {proxy_name}'

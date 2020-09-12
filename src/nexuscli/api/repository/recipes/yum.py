@@ -1,7 +1,8 @@
-from nexuscli import exception
+from nexuscli import exception, nexus_util
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository
+from nexuscli.api.repository.base_models import GroupRepository
 
 __all__ = ['YumGroupRepository', 'YumHostedRepository', 'YumProxyRepository']
 
@@ -17,15 +18,12 @@ class _YumRepository(Repository):
     :type depth: int
     :param kwargs: see :class:`Repository`
     """
-    DEFAULT_RECIPE = 'yum'
-    RECIPES = ('yum',)
+    RECIPE_NAME = 'yum'
 
-    def __init__(self, name, depth=1, **kwargs):
-        self.depth = depth
+    def __init__(self, *args, **kwargs):
+        self.depth: int = kwargs.get('depth', 1)
 
-        kwargs.update({'recipe': 'yum'})
-
-        super().__init__(name, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def configuration(self):
@@ -49,25 +47,15 @@ class YumHostedRepository(HostedRepository, _YumRepository):
 
     See :class:`HostedRepository` and :class:`YumRepository`
     """
-    def upload_file(self, src_file, dst_dir, dst_file):
-        """
-        Upload a single file to a yum repository.
+    def upload_file(self, source, destination):
+        dst_path, dst_file = nexus_util.get_dst_path_and_file(source, destination)
 
-        :param self: repository instance used to access Nexus 3 service.
-        :type self: nexuscli.api.repository.model.Repository
-        :param src_file: path to the local file to be uploaded.
-        :param dst_dir: directory under dst_repo to place file in.
-        :param dst_file: destination file name.
-        :raises exception.NexusClientAPIError: unknown response from Nexus API.
-        """
-        dst_dir = dst_dir or self.REMOTE_PATH_SEPARATOR
-        repository_path = self.REMOTE_PATH_SEPARATOR.join(
-            ['repository', self.name, dst_dir, dst_file])
+        repository_path = nexus_util.REMOTE_PATH_SEPARATOR.join(
+            ['repository', self.name, dst_path, dst_file])
 
-        with open(src_file, 'rb') as fh:
-            response = self.nexus_client.http_put(
-                repository_path, data=fh, stream=True,
-                service_url=self.nexus_client.config.url)
+        with open(source, 'rb') as fh:
+            response = self._client.put(
+                repository_path, data=fh, stream=True, service_url=self._client.config.url)
 
         if response.status_code != 200:
             raise exception.NexusClientAPIError(
@@ -82,8 +70,9 @@ class YumProxyRepository(ProxyRepository, _YumRepository):
 
     See :class:`ProxyRepository` and :class:`YumRepository`
     """
+    pass
 
 
-class YumGroupRepository:
+class YumGroupRepository(GroupRepository, _YumRepository):
     def __init__(self, *args, **kwargs):
-        raise NotImplementedError
+        raise exception.FeatureNotImplemented

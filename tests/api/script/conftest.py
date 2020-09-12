@@ -6,9 +6,9 @@ from nexuscli.api import script
 @pytest.fixture
 def script_collection(mocker):
     """A ScriptCollection with the nexus_client mocked"""
-    fixture = script.ScriptCollection(client=mocker.Mock())
+    fixture = script.ScriptCollection(nexus_http=mocker.Mock())
     # return_value is the mocked "request.response" object
-    fixture._client.http_get.return_value.status_code = mocker.PropertyMock()
+    fixture._http.get.return_value.status_code = mocker.PropertyMock()
     return fixture
 
 

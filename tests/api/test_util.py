@@ -12,9 +12,9 @@ def test_with_min_version(nexus_mock_client):
     2. runs the decorated method and returns its value when the server version is equal the
        required
     """
-    min_version = nexus_mock_client._server_version.next_version('patch')
+    min_version = nexus_mock_client.http.server_version.next_version('patch')
 
-    @util.with_min_version(str(nexus_mock_client._server_version))
+    @util.with_min_version(str(nexus_mock_client.http.server_version))
     def collection_method_good(self):
         return 1
 
@@ -26,7 +26,7 @@ def test_with_min_version(nexus_mock_client):
     def collection_method_bad(self):
         pass
 
-    collection = BaseCollection(client=nexus_mock_client)
+    collection = BaseCollection(nexus_http=nexus_mock_client.http)
     with pytest.raises(exception.NexusClientCapabilityUnsupported):
         collection_method_bad(collection)
 

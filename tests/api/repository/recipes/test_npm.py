@@ -1,5 +1,6 @@
 import pytest
 
+from nexuscli import exception
 from nexuscli.api.repository.model import NpmHostedRepository
 
 
@@ -11,14 +12,20 @@ def test_upload_error(upload_file_ensure_raises_api_error):
 @pytest.mark.integration
 @pytest.mark.incremental
 class TestNpmHostedRepository:
-    def test_create(self, repository_factory):
+    def test_create(self, nexus_client, repository_factory):
         repository = repository_factory(NpmHostedRepository)
-        repository.nexus_client.repositories.create(repository)
+        nexus_client.repositories.create(repository)
 
     def test_upload(self, repository_factory):
         repository = repository_factory(NpmHostedRepository)
         repository.upload_file('tests/fixtures/npm/example-0.0.0.tgz')
 
-    def test_delete(self, repository_factory):
+    def test_delete(self, nexus_client, repository_factory):
         repository = repository_factory(NpmHostedRepository)
-        repository.nexus_client.repositories.delete(repository.name)
+        nexus_client.repositories.delete(repository.name)
+
+    def test_get(self, nexus_client, repository_factory):
+        """Ensure it was deleted"""
+        repository = repository_factory(NpmHostedRepository)
+        with pytest.raises(exception.NexusClientInvalidRepository):
+            nexus_client.repositories.get_by_name(repository.name)

@@ -5,12 +5,11 @@ from nexuscli.cli import util
 
 def cmd_list(nexus_client, **kwargs):
     """Performs `nexus3 task list`"""
-    tasks = nexus_client.tasks.list()
-
     if kwargs.get('json'):
-        print(json.dumps(tasks))
+        print(json.dumps(nexus_client.tasks.list))
     else:
-        util.print_as_table(tasks['items'], ['id', 'name', 'currentState', 'lastRunResult'])
+        util.print_as_table(
+            nexus_client.tasks.list['items'], ['id', 'name', 'currentState', 'lastRunResult'])
 
 
 def cmd_show(nexus_client, task_id):

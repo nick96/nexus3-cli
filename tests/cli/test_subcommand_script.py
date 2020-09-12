@@ -13,7 +13,7 @@ def test_create(cli_runner, nexus_client):
 
     assert result.exit_code == 0
     assert result.output == ''
-    assert SCRIPT_NAME in [s.get('name') for s in nexus_client.scripts.list()]
+    assert SCRIPT_NAME in [s.get('name') for s in nexus_client.scripts.list]
 
 
 @pytest.mark.integration
@@ -31,8 +31,8 @@ def test_del(cli_runner, nexus_client):
     """Test that the `repo script` commands for create, run and rm work"""
     cmd_del = f'script del {SCRIPT_NAME}'
     result = cli_runner.invoke(nexus_cli, cmd_del)
+    nexus_client.scripts.reset()
 
     assert result.exit_code == 0
     assert result.output == ''
-    assert SCRIPT_NAME not in [
-        s.get('name') for s in nexus_client.scripts.list()]
+    assert SCRIPT_NAME not in [s.get('name') for s in nexus_client.scripts.list]

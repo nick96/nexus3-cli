@@ -1,7 +1,9 @@
+from nexuscli import exception
 from nexuscli.api.repository.recipes import validations
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository
+from nexuscli.api.repository.base_models import GroupRepository
 
 __all__ = ['MavenGroupRepository', 'MavenHostedRepository', 'MavenProxyRepository']
 
@@ -20,27 +22,20 @@ class _MavenRepository(Repository):
         documentation for details.
     :param kwargs: see :class:`Repository`
     """
-    DEFAULT_RECIPE = 'maven'
-    RECIPES = ('maven',)
+    RECIPE_NAME = 'maven'
     LAYOUT_POLICIES = ('PERMISSIVE', 'STRICT')
     """Maven layout policies"""
     VERSION_POLICIES = ('RELEASE', 'SNAPSHOT', 'MIXED')
     """Maven version policies"""
 
-    def __init__(self, name,
-                 layout_policy='PERMISSIVE',
-                 version_policy='RELEASE',
-                 **kwargs):
-        self.layout_policy = layout_policy
-        self.version_policy = version_policy
+    def __init__(self, *args, **kwargs):
+        self.layout_policy: str = kwargs.get('layout_policy', 'PERMISSIVE')
+        self.version_policy: str = kwargs.get('version_policy', 'RELEASE')
 
-        kwargs.update({'recipe': 'maven'})
+        super().__init__(*args, **kwargs)
 
-        super().__init__(name, **kwargs)
-
-        self.__validate_params()
-
-    def __validate_params(self):
+    def _validate_params(self):
+        super()._validate_params()
         validations.ensure_known(
             'layout_policy', self.layout_policy, self.LAYOUT_POLICIES)
         validations.ensure_known(
@@ -90,6 +85,6 @@ class MavenProxyRepository(_MavenRepository, ProxyRepository):
     pass
 
 
-class MavenGroupRepository:
-    def __init__(self):
-        raise NotImplementedError
+class MavenGroupRepository(GroupRepository, _MavenRepository):
+    def __init__(self, *args, **kwargs):
+        raise exception.FeatureNotImplemented

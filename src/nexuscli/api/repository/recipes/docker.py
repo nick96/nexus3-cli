@@ -1,27 +1,23 @@
+from nexuscli import exception
 from nexuscli.api.repository.recipes import validations
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository
+from nexuscli.api.repository.base_models import GroupRepository
 
 __all__ = ['DockerGroupRepository', 'DockerHostedRepository', 'DockerProxyRepository']
 
 
 class _DockerRepository(Repository):
-    DEFAULT_RECIPE = 'docker'
-    RECIPES = ('docker',)
+    RECIPE_NAME = 'docker'
 
-    def __init__(self, name,
-                 http_port=8084,
-                 https_port=8085,
-                 v1_enabled=False,
-                 force_basic_auth=False,
-                 **kwargs):
-        self.https_port = https_port
-        self.http_port = http_port
-        self.v1_enabled = v1_enabled
-        self.force_basic_auth = force_basic_auth
-        kwargs.update({'recipe': 'docker'})
-        super().__init__(name, **kwargs)
+    def __init__(self, *args, **kwargs):
+        self.http_port: int = kwargs.get('http_port', 8084)
+        self.https_port: int = kwargs.get('https_port', 8085)
+        self.v1_enabled: bool = kwargs.get('v1_enabled', False)
+        self.force_basic_auth: bool = kwargs.get('force_basic_auth', False)
+
+        super().__init__(*args, **kwargs)
 
     @property
     def configuration(self):
@@ -52,23 +48,17 @@ class DockerHostedRepository(HostedRepository, _DockerRepository):
 class DockerProxyRepository(ProxyRepository, _DockerRepository):
     INDEX_TYPES = ('REGISTRY', 'HUB', 'CUSTOM')
 
-    def __init__(self, name,
-                 index_type='REGISTRY',
-                 use_trust_store_for_index_access=False,
-                 index_url='https://index.docker.io/',
-                 **kwargs):
-        self.index_type = index_type
+    def __init__(self, *args, **kwargs):
+        self.index_type: str = kwargs.get('index_type', 'REGISTRY')
+        self.use_trust_store_for_index_access: bool = kwargs.get(
+            'use_trust_store_for_index_access', False)
+        self.index_url: str = kwargs.get('index_url', 'https://index.docker.io/')
 
-        validations.ensure_known(
-            'index_type',
-            self.index_type,
-            self.INDEX_TYPES
-        )
+        super().__init__(*args, **kwargs)
 
-        self.use_trust_store_for_index_access =\
-            use_trust_store_for_index_access
-        self.index_url = index_url
-        super().__init__(name, **kwargs)
+    def _validate_params(self):
+        validations.ensure_known('index_type', self.index_type, self.INDEX_TYPES)
+        super()._validate_params()
 
     @property
     def configuration(self):
@@ -107,6 +97,6 @@ class DockerProxyRepository(ProxyRepository, _DockerRepository):
         return repo_config
 
 
-class DockerGroupRepository:
-    def __init__(self):
-        raise NotImplementedError
+class DockerGroupRepository(GroupRepository, _DockerRepository):
+    def __init__(self, *args, **kwargs):
+        raise exception.FeatureNotImplemented

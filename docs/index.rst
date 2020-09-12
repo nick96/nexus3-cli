@@ -16,3 +16,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+See also: `Documentation for the Sonatype Nexus Repository Manager 3
+<https://help.sonatype.com/repomanager3/>`_.

@@ -1,3 +1,6 @@
+import pathlib
+import warnings
+
 from nexuscli import exception
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import GroupRepository
@@ -8,7 +11,7 @@ __all__ = ['NpmHostedRepository', 'NpmProxyRepository', 'NpmGroupRepository']
 
 
 class _NpmRepository(Repository):
-    DEFAULT_RECIPE = 'npm'
+    RECIPE_NAME = 'npm'
 
 
 class NpmGroupRepository(_NpmRepository, GroupRepository):
@@ -23,15 +26,17 @@ class NpmHostedRepository(_NpmRepository, HostedRepository):
         :param src_file: path to the local file to be uploaded.
         :param dst_dir: NOT USED
         :param dst_file: NOT USED
-        :raises exception.NexusClientInvalidRepositoryPath: invalid repository
-            path.
+        :raises exception.NexusClientInvalidRepositoryPath: invalid repository path.
         :raises exception.NexusClientAPIError: unknown response from Nexus API.
         """
-        params = {'repository': self.name}
-        files = {'npm.asset': open(src_file, 'rb').read()}
+        if dst_dir or dst_file:
+            warnings.warn(f'dst_dir={dst_dir} and dst_file={dst_file} are ignored')
 
-        response = self.nexus_client.http_post(
-            'components', files=files, params=params, stream=True)
+        params = {'repository': self.name}
+        src_file = pathlib.Path(src_file)
+        files = {src_file.name: src_file.open('rb').read()}
+
+        response = self._client.post('components', files=files, params=params, stream=True)
 
         if response.status_code != 204:
             raise exception.NexusClientAPIError(

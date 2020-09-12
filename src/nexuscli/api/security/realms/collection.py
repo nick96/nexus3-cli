@@ -32,7 +32,7 @@ class RealmCollection(BaseCollection):
             self._collection = []
             for raw_realm in self.list:
                 active = raw_realm['id'] in self.active
-                self._collection.append(Realm(client=self._client, active=active, **raw_realm))
+                self._collection.append(Realm(nexus_http=self._http, active=active, **raw_realm))
 
         return self._collection
 
@@ -56,11 +56,11 @@ class RealmCollection(BaseCollection):
         :raises exception.NexusClientAPIError: if list cannot be retrieved; i.e.: any HTTP code
         other than 204.
         """
-        service_url = self._client.rest_url + 'beta/'
+        service_url = self._http.rest_url + 'beta/'
         headers = {'Content-type': 'application/json'}
         data = json.dumps(self.active + [realm_id])
 
-        resp = self._client.http_put(
+        resp = self._http.put(
             'security/realms/active', service_url=service_url, headers=headers, data=data)
 
         if resp.status_code != 204:

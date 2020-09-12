@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+from typing import Optional
 
 from nexuscli.api.repository.base_models.repository import Repository
 
@@ -8,56 +9,38 @@ class ProxyRepository(Repository):
     A proxy Nexus repository.
 
     :param name: name of the repository.
-    :type name: str
     :param remote_url: The URL of the repository being proxied, including the
         protocol scheme.
-    :type remote_url: str
     :param auto_block: Auto-block outbound connections on the repository if
         remote peer is detected as unreachable/unresponsive.
-    :type auto_block: bool
     :param content_max_age: How long (in minutes) to cache artifacts before
         rechecking the remote repository. Release repositories should use -1.
-    :type content_max_age: int
     :param metadata_max_age: How long (in minutes) to cache metadata before
         rechecking the remote repository.
-    :type metadata_max_age: int
     :param negative_cache_enabled: Cache responses for content not present in
         the proxied repository
-    :type negative_cache_enabled: bool
     :param negative_cache_ttl: How long to cache the fact that a file was not
         found in the repository (in minutes)
-    :type negative_cache_ttl: int
     :param kwargs: see :class:`Repository`
     """
 
     TYPE = 'proxy'
 
-    def __init__(self, name,
-                 remote_url=None,
-                 auto_block=True,
-                 content_max_age=1440,
-                 metadata_max_age=1440,
-                 negative_cache_enabled=True,
-                 negative_cache_ttl=1440,
-                 remote_auth_type=None,
-                 remote_username=None,
-                 remote_password=None,
-                 **kwargs):
-        self.remote_url = remote_url
-        self.auto_block = auto_block
-        self.content_max_age = content_max_age
-        self.metadata_max_age = metadata_max_age
-        self.negative_cache_enabled = negative_cache_enabled
-        self.negative_cache_ttl = negative_cache_ttl
-        self.remote_username = remote_username
-        self.remote_password = remote_password
-        self.remote_auth_type = remote_auth_type
+    def __init__(self, *args, **kwargs):
+        self.remote_url: Optional[str] = kwargs.get('remote_url')
+        self.auto_block: bool = kwargs.get('auto_block', True)
+        self.content_max_age: int = kwargs.get('content_max_age', 1440)
+        self.metadata_max_age: int = kwargs.get('metadata_max_age', 1440)
+        self.negative_cache_enabled: bool = kwargs.get('negative_cache_enabled', True)
+        self.negative_cache_ttl: int = kwargs.get('negative_cache_ttl', 1440)
+        self.remote_username: Optional[str] = kwargs.get('remote_username')
+        self.remote_password: Optional[str] = kwargs.get('remote_password')
+        self.remote_auth_type: Optional[str] = kwargs.get('remote_auth_type')
 
-        super().__init__(name, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        self.__validate_params()
-
-    def __validate_params(self):
+    def _validate_params(self):
+        super()._validate_params()
         if not isinstance(self.remote_url, str):
             raise ValueError('remote_url must be a str')
 
@@ -78,8 +61,10 @@ class ProxyRepository(Repository):
 
         repo_config['attributes'].update({
             'httpclient': {
-                'blocked': False,
-                'autoBlock': self.auto_block,
+                'connection': {
+                    'blocked': False,
+                    'autoBlock': self.auto_block,
+                },
             },
             'proxy': {
                 'remoteUrl': self.remote_url,
@@ -101,3 +86,9 @@ class ProxyRepository(Repository):
                 }
             })
         return repo_config
+
+    def upload(self, *args, **kwargs):
+        raise NotImplementedError('Proxy repositories do not allow uploading')
+
+    def upload_directory(self, *args, **kwargs):
+        raise NotImplementedError('Proxy repositories do not allow uploading')

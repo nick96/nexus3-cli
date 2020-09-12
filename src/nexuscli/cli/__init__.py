@@ -40,7 +40,7 @@ def nexus_cli():
     default=nexus_config.DEFAULTS['x509_verify'], show_default=True,
     help='Verify server certificate', allow_from_autoenv=True, show_envvar=True)
 def login(**kwargs):
-    """Login to Nexus server, saving settings to ~/.nexus-cli."""
+    """Login to Nexus server, saving settings to ``~/.nexus-cli.`` and ``~/.nexus-cli.env``."""
     root_commands.cmd_login(**kwargs)
 
 
@@ -168,12 +168,17 @@ def _create_repository(ctx, repo_type, **kwargs) -> None:
 @repository_create.command(
     name='group',
     cls=util.mapped_commands({
-        # 'apt': Nexus doesn't support it
-        'docker': repository_model.DockerHostedRepository.RECIPES,
-        'maven': repository_model.MavenHostedRepository.RECIPES,
-        'yum': repository_model.YumHostedRepository.RECIPES,
-        # generic, remaining repositories
-        'recipe': repository_model.HostedRepository.RECIPES,
+        'recipe': [
+            repository_model.BowerGroupRepository.RECIPE_NAME,
+            repository_model.DockerGroupRepository.RECIPE_NAME,
+            repository_model.MavenGroupRepository.RECIPE_NAME,
+            repository_model.NpmGroupRepository.RECIPE_NAME,
+            repository_model.NugetGroupRepository.RECIPE_NAME,
+            repository_model.PypiGroupRepository.RECIPE_NAME,
+            repository_model.RawGroupRepository.RECIPE_NAME,
+            repository_model.RubygemsGroupRepository.RECIPE_NAME,
+            repository_model.YumGroupRepository.RECIPE_NAME,
+        ],
     }))
 def repository_create_group():
     """Create a group repository."""
@@ -185,7 +190,7 @@ def repository_create_group():
 @click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group')
 @util.with_nexus_client
 def repository_create_group_recipe(ctx: click.Context, **kwargs):
-    """Create a group repository."""
+    """Create group repository NAME."""
     _create_repository(ctx, 'group', **kwargs)
 
 
@@ -194,12 +199,19 @@ def repository_create_group_recipe(ctx: click.Context, **kwargs):
 @repository_create.command(
     name='hosted',
     cls=util.mapped_commands({
-        'apt': repository_model.AptHostedRepository.RECIPES,
-        'docker': repository_model.DockerHostedRepository.RECIPES,
-        'maven': repository_model.MavenHostedRepository.RECIPES,
-        'yum': repository_model.YumHostedRepository.RECIPES,
-        # generic, remaining repositories
-        'recipe': repository_model.HostedRepository.RECIPES,
+        'apt': [repository_model.AptHostedRepository.RECIPE_NAME],
+        'docker': [repository_model.DockerHostedRepository.RECIPE_NAME],
+        'maven': [repository_model.MavenHostedRepository.RECIPE_NAME],
+        'yum': [repository_model.YumHostedRepository.RECIPE_NAME],
+        # repositories that don't need custom parameters use the generic `recipe` meta-command
+        'recipe': [
+            repository_model.BowerHostedRepository.RECIPE_NAME,
+            repository_model.NpmHostedRepository.RECIPE_NAME,
+            repository_model.NugetHostedRepository.RECIPE_NAME,
+            repository_model.PypiHostedRepository.RECIPE_NAME,
+            repository_model.RawHostedRepository.RECIPE_NAME,
+            repository_model.RubygemsHostedRepository.RECIPE_NAME,
+        ],
     }))
 def repository_create_hosted():
     """Create a hosted repository."""
@@ -210,7 +222,7 @@ def repository_create_hosted():
 @util.add_options(repository_options.HOSTED)
 @util.with_nexus_client
 def repository_create_hosted_recipe(ctx: click.Context, **kwargs):
-    """Create a hosted repository."""
+    """Create a hosted repository NAME of given recipe."""
     _create_repository(ctx, 'hosted', **kwargs)
 
 
@@ -262,15 +274,21 @@ def repository_create_hosted_yum(ctx: click.Context, **kwargs):
 @repository_create.command(
     name='proxy',
     cls=util.mapped_commands({
-        'apt': repository_model.AptProxyRepository.RECIPES,
-        'docker': repository_model.DockerProxyRepository.RECIPES,
-        'maven': repository_model.MavenProxyRepository.RECIPES,
-        'yum': repository_model.YumProxyRepository.RECIPES,
-        # remaining, generic repositories
-        'recipe': repository_model.ProxyRepository.RECIPES,
+        'apt': [repository_model.AptProxyRepository.RECIPE_NAME],
+        'docker': [repository_model.DockerProxyRepository.RECIPE_NAME],
+        'maven': [repository_model.MavenProxyRepository.RECIPE_NAME],
+        'yum': [repository_model.YumProxyRepository.RECIPE_NAME],
+        'recipe': [
+            repository_model.BowerProxyRepository.RECIPE_NAME,
+            repository_model.NpmGroupRepository.RECIPE_NAME,
+            repository_model.NugetProxyRepository.RECIPE_NAME,
+            repository_model.PypiProxyRepository.RECIPE_NAME,
+            repository_model.RawProxyRepository.RECIPE_NAME,
+            repository_model.RubygemsProxyRepository.RECIPE_NAME,
+        ],
     }))
 def repository_create_proxy():
-    """Create a proxy repository."""
+    """Create proxy repository NAME."""
     pass
 
 
@@ -374,6 +392,14 @@ def cleanup_policy_create(ctx: click.Context, **kwargs):
 @util.with_nexus_client
 def cleanup_policy_list(ctx: click.Context):
     subcommand_cleanup_policy.cmd_list(ctx.obj)
+
+
+@cleanup_policy.command(name='show')
+@click.argument('policy_name')
+@util.with_nexus_client
+def cleanup_policy_show(ctx: click.Context, policy_name):
+    """Show the details for POLICY_NAME as JSON."""
+    subcommand_cleanup_policy.cmd_show(ctx.obj, policy_name)
 
 
 #############################################################################

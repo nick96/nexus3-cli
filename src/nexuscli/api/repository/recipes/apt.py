@@ -1,3 +1,5 @@
+from typing import Optional
+
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository
@@ -6,13 +8,12 @@ __all__ = ['AptHostedRepository', 'AptProxyRepository', 'AptGroupRepository']
 
 
 class _AptRepository(Repository):
-    DEFAULT_RECIPE = 'apt'
-    RECIPES = ('apt',)
+    RECIPE_NAME = 'apt'
 
-    def __init__(self, name: str, distribution: str = 'bionic', **kwargs):
-        self.distribution = distribution
-        kwargs.update({'recipe': 'apt'})
-        super().__init__(name, **kwargs)
+    def __init__(self, *args, **kwargs):
+        self.distribution: str = kwargs.get('distribution', 'bionic')
+
+        super().__init__(*args, **kwargs)
 
     @property
     def configuration(self):
@@ -28,10 +29,10 @@ class _AptRepository(Repository):
 
 
 class AptHostedRepository(_AptRepository, HostedRepository):
-    def __init__(self, name: str, gpg_keypair: str = None, passphrase: str = None, **kwargs):
-        self.gpg_keypair = gpg_keypair
-        self.passphrase = passphrase
-        super().__init__(name, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gpg_keypair: Optional[str] = kwargs.get('gpg_keypair')
+        self.passphrase: Optional[str] = kwargs.get('passphrase')
 
     @property
     def configuration(self):
@@ -47,11 +48,9 @@ class AptHostedRepository(_AptRepository, HostedRepository):
 
 
 class AptProxyRepository(_AptRepository, ProxyRepository):
-    def __init__(self, name,
-                 flat=False,
-                 **kwargs):
-        self.flat = flat
-        super().__init__(name, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.flat: bool = kwargs.get('flat', False)
 
     @property
     def configuration(self):

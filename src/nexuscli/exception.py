@@ -12,6 +12,7 @@ class CliReturnCode(Enum):
     DOWNLOAD_ERROR = 4
     INVALID_CREDENTIALS = 5
     CAPABILITY_NOT_AVAILABLE = 6
+    NOT_IMPLEMENTED = 7
     INVALID_SUBCOMMAND = 10
     SUBCOMMAND_ERROR = 11
     NOT_FOUND = 12
@@ -159,3 +160,12 @@ class TaskDisabled(NexusClientBaseError):
 
     def __init__(self, message):
         super().__init__(f'{message} is disabled')
+
+
+class FeatureNotImplemented(NexusClientBaseError):
+    """The requested feature hasn't been implemented in this client"""
+    exit_code = CliReturnCode.NOT_IMPLEMENTED.value
+
+    def __init__(self, message=None):
+        message = message or 'this feature is not yet implemented on nexus3-cli'
+        super().__init__(message)

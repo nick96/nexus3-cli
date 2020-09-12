@@ -1,5 +1,6 @@
 import inspect
 import json
+from typing import List, Optional, Tuple, Type, Union
 
 import semver
 import sys
@@ -16,27 +17,22 @@ SCRIPT_NAME_DELETE = 'nexus3-cli-repository-delete'
 SCRIPT_NAME_GET = 'nexus3-cli-repository-get'
 
 
-def get_repository_classes():
+def get_repository_classes() -> List[Type[Repository]]:
     members = inspect.getmembers(sys.modules['nexuscli.api.repository.model'], inspect.isclass)
-    return [cls for _, cls in members if issubclass(cls, Repository) and cls.DEFAULT_RECIPE]
+    return [cls for _, cls in members if issubclass(cls, Repository) and cls.RECIPE_NAME]
 
 
-def get_classes_by_type(repo_types):
+def get_classes_by_type(repo_types: Union[str, list]) -> List[Type[Repository]]:
     if isinstance(repo_types, str):
         repo_types = [repo_types]
-
     return [x for x in get_repository_classes() if x.TYPE in repo_types]
 
 
-def get_recipes_by_type(repo_type):
-    return [x.RECIPE_NAME for x in get_classes_by_type(repo_type)]
+def get_supported_recipes() -> List[str]:
+    return sorted(set([cls.RECIPE_NAME for cls in get_repository_classes()]))
 
 
-def get_supported_recipes():
-    return sorted(set([cls.DEFAULT_RECIPE for cls in get_repository_classes()]))
-
-
-def get_repository_class(raw_configuration):
+def get_repository_class(raw_configuration: dict) -> Type[Repository]:
     """
     Given a raw repository configuration, returns its corresponding class.
 
@@ -48,19 +44,18 @@ def get_repository_class(raw_configuration):
     recipe_name = _recipe_name(raw_configuration).lower()
     recipe_type = _recipe_type(raw_configuration).lower()
     for class_ in get_classes_by_type(recipe_type):
-        if class_.DEFAULT_RECIPE == recipe_name:
+        if class_.RECIPE_NAME == recipe_name:
             return class_
 
     raise NotImplementedError(f'{recipe_name} {recipe_type} for {raw_configuration}')
 
 
-def _recipe_name(raw_configuration):
+def _recipe_name(raw_configuration: dict) -> str:
     """
     Given a raw repository configuration, returns its recipe name.
 
     :param raw_configuration: configuration as returned by the SCRIPT_NAME_GET
         groovy script.
-    :type raw_configuration: dict
     :return: name of the recipe ("format")
     """
     name = raw_configuration['recipeName'].split('-')[0].title()
@@ -71,13 +66,12 @@ def _recipe_name(raw_configuration):
     return name
 
 
-def _recipe_type(raw_configuration):
+def _recipe_type(raw_configuration: dict) -> str:
     """
     Given a raw repository configuration, returns its recipe type.
 
     :param raw_configuration: configuration as returned by the SCRIPT_NAME_GET
         groovy script.
-    :type raw_configuration: dict
     :return: Group, Proxy or Hosted
     """
     return raw_configuration['recipeName'].split('-')[1].title()
@@ -87,8 +81,8 @@ def _recipe_type(raw_configuration):
 #   a bad idea because now we need to convert it back and forth. Perhaps add
 #   a compatible change that allows one to provide the flat kwargs OR a
 #   configuration dict in the format accepted/returned by Nexus.
-def _add_proxy_kwargs(kwargs, attributes):
-    kwargs['auto_block'] = attributes['httpclient']['autoBlock']
+def _add_proxy_kwargs(kwargs, attributes) -> None:
+    kwargs['auto_block'] = attributes['httpclient']['connection']['autoBlock']
 
     kwargs['content_max_age'] = int(attributes['proxy']['contentMaxAge'])
     kwargs['metadata_max_age'] = int(attributes['proxy']['metadataMaxAge'])
@@ -99,18 +93,18 @@ def _add_proxy_kwargs(kwargs, attributes):
         attributes['negativeCache']['timeToLive'])
 
 
-def _add_maven_kwargs(kwargs, attributes):
+def _add_maven_kwargs(kwargs, attributes) -> None:
     kwargs['layout_policy'] = attributes['maven']['layoutPolicy']
     kwargs['version_policy'] = attributes['maven']['versionPolicy']
 
 
-def _add_yum_kwargs(kwargs, attributes):
+def _add_yum_kwargs(kwargs, attributes) -> None:
     kwargs['depth'] = int(attributes['yum']['repodataDepth'])
     # TODO: support yum deploy policy
     # kwargs['TODO'] = attributes['yum']['deployPolicy']
 
 
-def _add_apt_kwargs(kwargs, attributes):
+def _add_apt_kwargs(kwargs, attributes) -> None:
     if 'aptSigning' in attributes:
         kwargs['passphrase'] = attributes['aptSigning']['passphrase']
         kwargs['gpg_keypair'] = attributes['aptSigning']['keypair']
@@ -120,27 +114,45 @@ def _add_apt_kwargs(kwargs, attributes):
             kwargs['flat'] = attributes['apt']['flat']
 
 
-def _add_group_kwargs(kwargs, attributes):
+def _add_group_kwargs(kwargs, attributes) -> None:
     kwargs['member_names'] = attributes['group']['memberNames']
 
 
-def _add_hosted_kwargs(kwargs, attributes):
+def _add_hosted_kwargs(kwargs, attributes) -> None:
     kwargs['write_policy'] = attributes['storage']['writePolicy']
 
 
-def _add_common_kwargs(kwargs, attributes):
+def _safe_get(mydict, *args, default=None) -> Optional[str]:
+    if not args:
+        raise ValueError('Missing args')
+    if not isinstance(mydict, dict):
+        raise ValueError('Not a dict')
+
+    value = mydict.get(args[0])
+    if value is None:
+        return default
+    try:
+        return _safe_get(value, *args[1:], default=default)
+    except ValueError:
+        return value
+
+
+def _add_common_kwargs(kwargs, attributes) -> None:
     kwargs['cleanup_policy'] = attributes.get('cleanup', {}).get('policyName')
     if kwargs['cleanup_policy'] == 'None':
         kwargs['cleanup_policy'] = None
 
     kwargs['blob_store_name'] = attributes['storage']['blobStoreName']
-    kwargs['strict_content_type_validation'] = attributes[
-        'storage']['strictContentTypeValidation']
+    kwargs['strict_content_type_validation'] = _safe_get(
+        attributes, 'storage', 'strictContentTypeValidation')
 
 
-def _repository_args_kwargs(raw_configuration):
-    args = (raw_configuration['repositoryName'],)
-    kwargs = {'recipe': _recipe_name(raw_configuration)}
+def _repository_args_kwargs(raw_configuration) -> Tuple:
+    args = ()
+    kwargs = {
+        'name': raw_configuration['repositoryName'],
+        'recipe': _recipe_name(raw_configuration)
+    }
 
     attributes = raw_configuration['attributes']
     _add_common_kwargs(kwargs, attributes)
@@ -167,11 +179,21 @@ def _repository_args_kwargs(raw_configuration):
 
 class RepositoryCollection(BaseCollection):
     """A class to manage Nexus 3 repositories."""
-    def __init__(self, client=None):
-        super().__init__(client=client)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._repositories_json = None
 
-    def get_by_name(self, name):
+    @property
+    def _script_create(self):
+        return util.script_for_version(
+            SCRIPT_NAME_CREATE,
+            self._http.server_version,
+            SCRIPT_CREATE_VERSIONS)
+
+    def script_dependencies(self,) -> List[str]:
+        return [SCRIPT_NAME_DELETE, SCRIPT_NAME_GET, self._script_create]
+
+    def get_by_name(self, name: str) -> Repository:
         """
         Get a Nexus 3 repository by its name.
 
@@ -183,11 +205,16 @@ class RepositoryCollection(BaseCollection):
         """
         configuration = self.get_raw_by_name(name)
         cls = get_repository_class(configuration)
-        args, kwargs = _repository_args_kwargs(configuration)
+        try:
+            args, kwargs = _repository_args_kwargs(configuration)
+        except KeyError as e:
+            from pprint import pformat
+            raise exception.NexusClientAPIError(
+                f'{e} not found in expected location on the Nexus response:\n'
+                f'{pformat(configuration, indent=2)}')
+        return cls(*args, nexus_http=self._http, **kwargs)
 
-        return cls(*args, nexus_client=self._client, **kwargs)
-
-    def get_raw_by_name(self, name):
+    def get_raw_by_name(self, name: str) -> dict:
         """
         Return the raw dict for the repository called ``name``. Remember to
         :meth:`refresh` to get the latest from the server.
@@ -198,27 +225,13 @@ class RepositoryCollection(BaseCollection):
         :raise exception.NexusClientInvalidRepository: when a repository with
             the given name isn't found.
         """
-        self._client.scripts.create_if_missing(SCRIPT_NAME_GET)
-
-        resp = self._client.scripts.run(SCRIPT_NAME_GET, data=name)
+        resp = self.run_script(SCRIPT_NAME_GET, data=name)
         configuration = resp.get('result')
 
         if configuration == 'null':
             raise exception.NexusClientInvalidRepository(name)
 
         return json.loads(configuration)
-
-    # TODO: deprecate; replace with reset, as per realms/collection
-    def refresh(self):
-        """
-        Refresh local list of repositories with latest from service. A raw
-        representation of repositories can be fetched using :meth:`raw_list`.
-        """
-        response = self._client.http_get('repositories')
-        if response.status_code != 200:
-            raise exception.NexusClientAPIError(response.content)
-
-        self._repositories_json = response.json()
 
     def raw_list(self):
         """
@@ -228,8 +241,11 @@ class RepositoryCollection(BaseCollection):
             dict: for the format, see `List Repositories
             <https://help.sonatype.com/repomanager3/rest-and-integration-api/repositories-api#RepositoriesAPI-ListRepositories>`_.
         """
-        self.refresh()
-        return self._repositories_json
+        response = self._http.get('repositories')
+        if response.status_code != 200:
+            raise exception.NexusClientAPIError(response.content)
+
+        return response.json()
 
     def delete(self, name):
         """
@@ -238,8 +254,13 @@ class RepositoryCollection(BaseCollection):
         :param name: name of the repository to be deleted.
         :type name: str
         """
-        self._client.scripts.create_if_missing(SCRIPT_NAME_DELETE)
-        self._client.scripts.run(SCRIPT_NAME_DELETE, data=name)
+        self.run_script(SCRIPT_NAME_DELETE, data=name)
+
+    def new(self, repo_type, **kwargs):
+        """Creates a Repository instance object"""
+        recipe = kwargs['recipe']
+        repository_class = get_repository_class({'recipeName': f'{recipe}-{repo_type}'})
+        return repository_class(nexus_http=self._http, **kwargs)
 
     def create(self, repository):
         """
@@ -250,19 +271,12 @@ class RepositoryCollection(BaseCollection):
         :type repository: Repository
         :raises NexusClientCreateRepositoryError: error creating repository.
         """
-        script_name = util.script_for_version(
-            SCRIPT_NAME_CREATE,
-            self._client.server_version,
-            SCRIPT_CREATE_VERSIONS)
-
         if not issubclass(type(repository), model.Repository):
             raise TypeError(f'{repository} has type {type(repository)}'
                             f' but must be a subclass of Repository')
 
-        self._client.scripts.create_if_missing(script_name)
-
         script_args = json.dumps(repository.configuration)
-        resp = self._client.scripts.run(script_name, data=script_args)
+        resp = self.run_script(self._script_create, data=script_args)
 
         result = resp.get('result')
         if result != 'null':
@@ -280,12 +294,12 @@ class RepositoryCollection(BaseCollection):
             the given name isn't found.
         """
         endpoint = f'repositories/{name}/health-check'
-        service_url = self._client.rest_url + 'beta/'
+        service_url = self._http.rest_url + 'beta/'
 
         if enable:
-            resp = self._client.http_post(endpoint, service_url=service_url, data='')
+            resp = self._http.post(endpoint, service_url=service_url, data='')
         else:
-            resp = self._client.http_delete(endpoint, service_url=service_url)
+            resp = self._http.delete(endpoint, service_url=service_url)
 
         if resp.status_code != 204:
             raise exception.NexusClientAPIError(resp.content)

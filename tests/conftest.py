@@ -10,6 +10,7 @@ from subprocess import check_call
 
 from nexuscli.nexus_client import NexusClient
 from nexuscli.nexus_config import NexusConfig
+from nexuscli.nexus_http import NexusHttp
 
 
 APT_GPG_KEY_PATH = pathlib.Path('tests/fixtures/apt/private.gpg.key')
@@ -63,13 +64,6 @@ def docopt_args(faker):
     }
 
     return args
-
-
-@pytest.fixture
-def mock_nexus_client(mocker):
-    fixture = mocker.Mock()
-    fixture.server_version = None
-    return fixture
 
 
 @pytest.fixture(scope='session')
@@ -139,14 +133,15 @@ def nexus_repository(name, format_):
 
 
 @pytest.fixture
-def nexus_mock_client(mocker, faker):
-    """A nexus_client with the request method mocked"""
+def nexus_mock_http(mocker, faker, config_args):
     class ResponseMock:
         def __init__(self):
             self.status_code = 200
+            self.text = faker.sentence()
             self.content = faker.sentence()
             self.reason = faker.sentence()
-            # prepare content for repositories.refresh()
+
+            # prepare content for repositories.raw_list
             self._json = [
                 nexus_repository(
                     name=faker.pystr(),
@@ -159,12 +154,19 @@ def nexus_mock_client(mocker, faker):
         def json(self):
             return self._json
 
-    mocker.patch('nexuscli.nexus_client.NexusClient.http_request',
-                 return_value=ResponseMock())
+    mocker.patch('nexuscli.nexus_http.NexusHttp.request', return_value=ResponseMock())
+    mocker.patch('nexuscli.nexus_http.NexusHttp.server_version',
+                 new_callable=mocker.PropertyMock, return_value=semver.VersionInfo(3, 19, 0))
+    return NexusHttp(NexusConfig(**config_args))
+
+
+@pytest.fixture
+def nexus_mock_client(nexus_mock_http, mocker, faker):
+    """A nexus_client with the request method mocked"""
+    mocker.patch('nexuscli.api.base_collection.BaseCollection.run_script')
+    mocker.patch.object(NexusClient, 'security_realms', new_callabe=mocker.PropertyMock)
 
     client = NexusClient()
-    client._server_version = semver.VersionInfo(3, 19, 0)
-    client.repositories.refresh()
     return client
 
 
@@ -207,17 +209,18 @@ def make_testfile(faker, tmpdir):
 
 
 @pytest.helpers.register
-def repo_list(client, repo_name, expected_count, repo_path=None):
+def repo_list(repository, expected_count, repo_path=''):
     """
     Nexus doesn't show uploaded files when you list the contents immediately
     after an upload. This helper retries it 3 times with increasing back-off.
     """
     def _list():
-        file_list = client.list(repo_name)
+        print(f'Listing files on {repository.name}/{repo_path}')
+        file_list = repository.list(repo_path)
 
         files = []
         for f in iter(file_list):
-            f = f[len(repo_path)+1:] if repo_path else f
+            f = f[len(repo_path):] if repo_path else f
             files.append(f)
 
         return files
@@ -248,17 +251,15 @@ def hosted_raw_repo_empty(faker):
 
 @pytest.fixture(scope='session')
 def upload_repo():
-    """
-    As per hosted_raw_repo_empty but the same one for the whole test session
-    """
+    """As per hosted_raw_repo_empty but scoped for the session"""
     faker = Faker()
     tmp_path = pathlib.Path(tempfile.TemporaryDirectory().name)
     src_dir, x_file_list = _deep_file_tree(faker, tmp_path)
     return _hosted_raw_repo_empty(faker), src_dir, x_file_list
 
 
-@pytest.helpers.register
-def get_ResponseMock():
+@pytest.fixture()
+def response_mock():
     """Generate mock return value for request"""
     class ResponseMock:
         def __init__(self, status_code, reason):

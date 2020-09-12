@@ -2,7 +2,7 @@
 import inflect
 import sys
 
-from nexuscli import exception, nexus_config
+from nexuscli import exception, nexus_config, nexus_util
 from nexuscli.nexus_client import NexusClient
 
 
@@ -27,9 +27,14 @@ def cmd_login(**kwargs):
     return exception.CliReturnCode.SUCCESS.value
 
 
-def cmd_list(nexus_client, repository_path):
+def cmd_list(nexus_client, full_path):
     """Performs ``nexus3 list``"""
-    artefact_list = nexus_client.list(repository_path)
+    # TODO: refactor the path handling
+    repository_name, path_fragments = nexus_util.pop_repository(full_path)
+    repository_path = nexus_util.REMOTE_PATH_SEPARATOR.join(path_fragments)
+    repository = nexus_client.repositories.get_by_name(repository_name)
+
+    artefact_list = repository.list(repository_path)
     for artefact in iter(artefact_list):
         print(artefact)
     return exception.CliReturnCode.SUCCESS.value
@@ -51,13 +56,17 @@ def cmd_upload(nexus_client, src=None, dst=None, flatten=None, recurse=None):
     """Performs ``nexus3 upload``"""
     sys.stderr.write(f'Uploading {src} to {dst}\n')
 
-    upload_count = nexus_client.upload(
-        src, dst, flatten=flatten, recurse=recurse)
+    # TODO: refactor the path handling
+    repository_name, path_fragments = nexus_util.pop_repository(dst)
+    dst_path = nexus_util.REMOTE_PATH_SEPARATOR.join(path_fragments)
+    repository = nexus_client.repositories.get_by_name(repository_name)
+
+    upload_count = repository.upload(src, dst_path, flatten=flatten, recurse=recurse)
 
     _cmd_up_down_errors(upload_count, 'upload')
 
     file = PLURAL('file', upload_count)
-    sys.stderr.write(f'Uploaded {upload_count} {file} to {dst}\n')
+    sys.stderr.write(f'Uploaded {upload_count} {file} to {dst_path}\n')
     return exception.CliReturnCode.SUCCESS.value
 
 
@@ -65,8 +74,12 @@ def cmd_download(nexus_client, src=None, dst=None, flatten=None, cache=None):
     """Performs ``nexus3 download``"""
     sys.stderr.write(f'Downloading {src} to {dst}\n')
 
-    download_count = nexus_client.download(
-        src, dst, flatten=flatten, nocache=not cache)
+    # TODO: refactor the path handling
+    repository_name, path_fragments = nexus_util.pop_repository(src)
+    src_path = nexus_util.REMOTE_PATH_SEPARATOR.join(path_fragments)
+    repository = nexus_client.repositories.get_by_name(repository_name)
+
+    download_count = repository.download(src_path, dst, flatten=flatten, nocache=not cache)
 
     _cmd_up_down_errors(download_count, 'download')
 
@@ -78,7 +91,12 @@ def cmd_download(nexus_client, src=None, dst=None, flatten=None, cache=None):
 
 def cmd_delete(nexus_client, repository_path):
     """Performs ``nexus3 delete``"""
-    delete_count = nexus_client.delete(repository_path)
+    # TODO: refactor the path handling
+    repository_name, path_fragments = nexus_util.pop_repository(repository_path)
+    delete_path = nexus_util.REMOTE_PATH_SEPARATOR.join(path_fragments)
+    repository = nexus_client.repositories.get_by_name(repository_name)
+
+    delete_count = repository.delete(delete_path)
 
     _cmd_up_down_errors(delete_count, 'delete')
 

@@ -72,7 +72,7 @@ def mapped_commands(command_map: dict):
             return None
 
         def list_commands(self, ctx):
-            return [a for b in command_map.values() for a in b]
+            return sorted([a for b in command_map.values() for a in b])
 
     return CommandGroup
 

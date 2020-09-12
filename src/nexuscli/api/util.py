@@ -1,7 +1,7 @@
 import functools
 import pathlib
 import warnings
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, Callable, List, TypeVar, cast
 
 import semver
 
@@ -12,7 +12,10 @@ from nexuscli import exception
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def script_for_version(script_name, server_version, versions):
+def script_for_version(
+        script_name: str,
+        server_version: semver.VersionInfo,
+        versions: List[semver.VersionInfo]) -> str:
     """
     Determine if a certain nexus server version requires a different version of
     the given groovy script.
@@ -48,10 +51,10 @@ def with_min_version(min_version: str) -> Callable[[F], F]:
                     'Invalid semver string; skipping version capability check', stacklevel=2)
                 return f(collection, *args, **kwargs)
 
-            if collection._client.server_version < min_semver:
+            if collection._http.server_version < min_semver:
                 raise exception.NexusClientCapabilityUnsupported(
                     f'{f} requires version {min_semver}; server has '
-                    f'version {collection._client.server_version}')
+                    f'version {collection._http.server_version}')
 
             return f(collection, *args, **kwargs)
 

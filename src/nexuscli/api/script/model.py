@@ -15,7 +15,7 @@ class ScriptCollection(BaseCollection):
         :raises exception.NexusClientAPIError: if the response from the Nexus
             service isn't recognised; i.e.: any HTTP code other than 200, 404.
         """
-        resp = self._client.http_head(f'script/{name}')
+        resp = self._http.head(f'script/{name}')
         if resp.status_code == 200:
             return True
         elif resp.status_code == 404:
@@ -33,7 +33,7 @@ class ScriptCollection(BaseCollection):
         :raises exception.NexusClientAPIError: if the response from the Nexus
             service isn't recognised; i.e.: any HTTP code other than 200, 404.
         """
-        resp = self._client.http_get(f'script/{name}')
+        resp = self._http.get(f'script/{name}')
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 404:
@@ -41,16 +41,8 @@ class ScriptCollection(BaseCollection):
         else:
             raise exception.NexusClientAPIError(resp.content)
 
-    def list(self):
-        """
-        List of all script names on the Nexus 3 service.
-
-        :return: a list of names
-        :rtype: list
-        :raises exception.NexusClientAPIError: if the script names cannot be
-            retrieved; i.e.: any HTTP code other than 200.
-        """
-        resp = self._client.http_get('script')
+    def raw_list(self):
+        resp = self._http.get('script')
         if resp.status_code != 200:
             raise exception.NexusClientAPIError(resp.content)
 
@@ -97,30 +89,13 @@ class ScriptCollection(BaseCollection):
             'content': script_content,
         }
 
-        resp = self._client.http_post('script', json=script)
+        resp = self._http.post('script', json=script)
         if resp.status_code != 204:
             raise exception.NexusClientAPIError(resp.content)
 
-    def run(self, script_name, data=''):
-        """
-        Runs an existing script on the Nexus 3 service.
-
-        :param script_name: name of script to be run.
-        :param data: parameters to be passed to the script, via HTTP POST. If
-            the script being run requires a certain format or encoding, you
-            need to prepare it yourself. Typically this is `json.dumps(data)`.
-        :return: the content returned by the script, if any.
-        :rtype: str, dict
-        :raises exception.NexusClientAPIError: if the Nexus service fails to
-            run the script; i.e.: any HTTP code other than 200.
-        """
-        headers = {'content-type': 'text/plain'}
-        endpoint = f'script/{script_name}/run'
-        resp = self._client.http_post(endpoint, headers=headers, data=data)
-        if resp.status_code != 200:
-            raise exception.NexusClientAPIError(resp.content)
-
-        return resp.json()
+    def run(self, *args, **kwargs):
+        """See :py:meth:`run_script` """
+        return self.run_script(*args, **kwargs)
 
     def delete(self, script_name):
         """
@@ -131,7 +106,7 @@ class ScriptCollection(BaseCollection):
             delete the script; i.e.: any HTTP code other than 204.
         """
         endpoint = f'script/{script_name}'
-        resp = self._client.http_delete(endpoint)
+        resp = self._http.delete(endpoint)
         if resp.status_code != 204:
             raise exception.NexusClientAPIError(resp.reason)
 

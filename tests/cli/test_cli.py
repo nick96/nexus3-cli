@@ -34,7 +34,7 @@ def test_login_envs(cli_runner_env):
     'nuget-hosted'])
 @pytest.mark.integration
 def test_list(repo_name, cli_runner, faker):
-    result = cli_runner.invoke(nexus_cli, f'list {repo_name}/')
+    result = cli_runner.invoke(nexus_cli, f'list {repo_name}/', catch_exceptions=False)
 
     assert result.exit_code == exception.CliReturnCode.SUCCESS.value
     assert result.output == ''

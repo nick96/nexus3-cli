@@ -105,7 +105,6 @@ unit-py3.8:
     - docker:dind
   stage: test
   script:
-    - pytest -m integration --junitxml=junit-integration-${NEXUS_VERSION}.xml
     - pytest -m integration
       --junitxml=junit-integration-${NEXUS_VERSION}.xml
       --cov-report xml:coverage-integration-${NEXUS_VERSION}.xml
@@ -113,15 +112,15 @@ unit-py3.8:
     - package
   except: ['tags']
 # integration tests
-int-nexus-3.22:
+int-nexus-3.25:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.22.1'
+    NEXUS_VERSION: '3.25.1'
 #
-int-nexus-3.23:
+int-nexus-3.26:
   <<: *integration_template
   variables:
-    NEXUS_VERSION: '3.23.0'
+    NEXUS_VERSION: '3.26.1'
 #
 int-nexus-latest:
   <<: *integration_template
@@ -130,24 +129,9 @@ int-nexus-latest:
 # --------------------------------------------------------------------------
 # `quality` stage
 # --------------------------------------------------------------------------
-code_quality:
-  stage: quality
+spotbugs-sast:
   rules:
-    - if: $CI_COMMIT_BRANCH
-dependency_scanning:
-  stage: quality
-license_scanning:
-  stage: quality
-  rules:
-    - if: $CI_COMMIT_BRANCH
-sast:
-  stage: quality
-  rules:
-    - if: $CI_COMMIT_BRANCH
-secret_detection:
-  stage: quality
-  variables:
-    SECRET_DETECTION_HISTORIC_SCAN: "true"
+    - when: never
 # --------------------------------------------------------------------------
 # `publish` stage
 # --------------------------------------------------------------------------
@@ -155,7 +139,13 @@ coverage:
   <<: *unit_template
   before_script: []
   artifacts: {}
-  dependencies: []
+  dependencies:
+    - unit-py3.6
+    - unit-py3.7
+    - unit-py3.8
+    - int-nexus-3.25
+    - int-nexus-3.25
+    - int-nexus-latest
   image: python:${PYTHON_VERSION}-alpine
   stage: publish
   script:

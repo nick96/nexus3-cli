@@ -8,7 +8,7 @@ __all__ = ['PypiHostedRepository', 'PypiProxyRepository', 'PypiGroupRepository']
 
 
 class _PypiRepository(Repository):
-    DEFAULT_RECIPE = 'pypi'
+    RECIPE_NAME = 'pypi'
 
 
 class PypiGroupRepository(_PypiRepository, GroupRepository):
@@ -30,7 +30,7 @@ class PypiHostedRepository(_PypiRepository, HostedRepository):
         params = {'repository': self.name}
         files = {'pypi.asset': open(src_file, 'rb').read()}
 
-        response = self.nexus_client.http_post(
+        response = self._client.post(
             'components', files=files, params=params, stream=True)
 
         if response.status_code != 204:

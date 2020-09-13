@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 
-import nexuscli
 from nexuscli import exception
+from nexuscli.nexus_http import NexusHttp
 
 
 class BaseCollection:
@@ -13,8 +13,8 @@ class BaseCollection:
         service. You must provide this at instantiation if you want to call any methods that
         require connectivity to Nexus.
     """
-    def __init__(self, nexus_http: 'nexuscli.nexus_http.NexusHttp' = None):
-        self._http = nexus_http
+    def __init__(self, nexus_http: NexusHttp = None):
+        self._http: NexusHttp = nexus_http
         self._list: Optional[List[dict]] = None
 
     def script_dependencies(self) -> List[str]:
@@ -76,6 +76,17 @@ class BaseCollection:
         resp = self._http.get(endpoint, service_url=service_url)
 
         if resp.status_code != 200:
-            raise nexuscli.exception.NexusClientAPIError(resp.content)
+            raise exception.NexusClientAPIError(resp.content)
 
         return resp.json()
+
+    @staticmethod
+    def _get_by_key(items: List[dict], key: str, value: str):
+        """Returns the first matching item in a list of dictionaries where item[key] == value"""
+        for item in items:
+            try:
+                if item[key] == value:
+                    return item
+            except KeyError:
+                pass
+        raise exception.NotFound(f'Item matching {key}=={value}')

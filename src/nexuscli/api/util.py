@@ -1,8 +1,10 @@
 import functools
+import json
 import pathlib
 import warnings
-from typing import Any, Callable, List, TypeVar, cast
+from typing import Any, Callable, List, TypeVar, Type, Union, cast
 
+import requests
 import semver
 
 import nexuscli
@@ -60,3 +62,22 @@ def with_min_version(min_version: str) -> Callable[[F], F]:
 
         return cast(F, wrapper)
     return decorator
+
+
+def validate_response(response: requests.Response,
+                      accepted_codes: Union[int, List[int]],
+                      exc_class: Type[Exception] = exception.NexusClientAPIError) -> None:
+    """
+    Ensure that :py:attr:`response.status_code` is one of ``accepted_codes``, otherwise raise
+    exception ``exc_class`` using the response content as the error message.
+    """
+    if isinstance(accepted_codes, int):
+        accepted_codes = [accepted_codes]
+
+    if response.status_code not in accepted_codes:
+        message = response.text
+        try:
+            message = response.json()[0]['message']
+        except (IndexError, KeyError, TypeError, json.JSONDecodeError):
+            pass
+        raise exc_class(message)

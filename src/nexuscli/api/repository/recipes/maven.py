@@ -1,5 +1,5 @@
 from nexuscli import exception
-from nexuscli.api.repository.recipes import validations
+from nexuscli.api import validations
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository
@@ -36,10 +36,8 @@ class _MavenRepository(Repository):
 
     def _validate_params(self):
         super()._validate_params()
-        validations.ensure_known(
-            'layout_policy', self.layout_policy, self.LAYOUT_POLICIES)
-        validations.ensure_known(
-            'version_policy', self.version_policy, self.VERSION_POLICIES)
+        validations.ensure_known('layout_policy', self.layout_policy, self.LAYOUT_POLICIES)
+        validations.ensure_known('version_policy', self.version_policy, self.VERSION_POLICIES)
 
     @property
     def configuration(self):

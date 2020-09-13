@@ -1,5 +1,5 @@
 from nexuscli import exception
-from nexuscli.api.repository.recipes import validations
+from nexuscli.api import validations
 from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository

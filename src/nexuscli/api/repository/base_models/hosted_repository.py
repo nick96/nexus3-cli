@@ -1,4 +1,4 @@
-from nexuscli.api.repository.recipes import validations
+from nexuscli.api import validations
 from nexuscli.api.repository.base_models import Repository
 
 DEFAULT_WRITE_POLICY = 'ALLOW'

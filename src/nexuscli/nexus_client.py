@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from nexuscli.nexus_config import NexusConfig
 from nexuscli.nexus_http import NexusHttp
+from nexuscli.api.blobstore import BlobstoreCollection
 from nexuscli.api.cleanup_policy import CleanupPolicyCollection
 from nexuscli.api.repository import RepositoryCollection
 from nexuscli.api.security.realms import RealmCollection
@@ -28,17 +29,24 @@ class NexusClient:
     def __init__(self, config: NexusConfig = None):
         self.http: NexusHttp = NexusHttp(config)
         # Collections
+        self._blobstores: Optional[BlobstoreCollection] = None
         self._cleanup_policies: Optional[RealmCollection] = None
         self._repositories: Optional[RepositoryCollection] = None
         self._scripts: Optional[ScriptCollection] = None
         self._security_realms: Optional[RealmCollection] = None
         self._tasks: Optional[TaskCollection] = None
 
-        # self.repositories.refresh()
-
     def create_scripts(self, scripts: List[str]) -> None:
         for script_name in scripts:
             self.scripts.create_if_missing(script_name)
+
+    @property
+    def blobstores(self) -> BlobstoreCollection:
+        """Instance of :class:`~nexuscli.api.repository.collection.BlobstoreCollection`"""
+        if self._blobstores is None:
+            self._blobstores = BlobstoreCollection(nexus_http=self.http)
+            self.create_scripts(self._blobstores.script_dependencies())
+        return self._blobstores
 
     @property
     def repositories(self) -> RepositoryCollection:

@@ -167,4 +167,4 @@ docker:
   trigger:
     project: thiagocsf/docker-nexus3-cli
     branch: master
-  only: ['tags']
+  only: ['master', 'tags']

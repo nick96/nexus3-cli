@@ -49,8 +49,11 @@ class BlobstoreCollection(BaseCollection):
         """See Nexus 3 API documentation."""
         resp = self._http.delete(f'blobstores/{name}')
         util.validate_response(resp, 204)
+        self.reset()
 
     @util.with_min_version('3.19.0')
     def create(self, blobstore: Blobstore) -> None:
-        resp = self._http.post(f'blobstores/{blobstore.type}', json=blobstore.configuration)
-        util.validate_response(resp, 204)
+        resp = self._http.post(
+            f'blobstores/{blobstore.type.lower()}', json=blobstore.configuration)
+        util.validate_response(resp, [201, 204])
+        self.reset()

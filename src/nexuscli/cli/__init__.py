@@ -6,8 +6,9 @@ from nexuscli import LOG_LEVEL, nexus_config
 from nexuscli.api.repository import collection as repository_collection
 from nexuscli.api.repository import model as repository_model
 from nexuscli.cli import (
-    repository_options, root_commands, util, subcommand_repository,
-    subcommand_cleanup_policy, subcommand_realm, subcommand_script, subcommand_task)
+    repository_options, root_commands, util, subcommand_blobstore, subcommand_repository,
+    subcommand_cleanup_policy, subcommand_realm, subcommand_script, subcommand_task,
+    blobstore_options)
 from nexuscli.cli.constants import ENV_VAR_PREFIX
 
 PACKAGE_VERSION = pkg_resources.get_distribution('nexus3-cli').version
@@ -72,10 +73,8 @@ def delete(ctx: click.Context, repository_path):
 # TODO: use Path for src argument
 @click.argument('src')
 @click.argument('dst')
-@click.option('--flatten/--no-flatten', default=False,
-              help='Flatten DST directory structure')
-@click.option('--recurse/--no-recurse', default=True,
-              help='Process all SRC subdirectories')
+@click.option('--flatten/--no-flatten', default=False, help='Flatten DST directory structure')
+@click.option('--recurse/--no-recurse', default=True, help='Process all SRC subdirectories')
 @util.with_nexus_client
 def upload(ctx: click.Context, **kwargs):
     """
@@ -91,8 +90,7 @@ def upload(ctx: click.Context, **kwargs):
 @nexus_cli.command()
 @click.argument('src')
 @click.argument('dst')
-@click.option('--flatten/--no-flatten', default=False,
-              help='Flatten DEST directory structure')
+@click.option('--flatten/--no-flatten', default=False, help='Flatten DEST directory structure')
 @click.option('--cache/--no-cache', default=True,
               help='Do not download if a local copy is already up-to-date')
 @util.with_nexus_client
@@ -150,8 +148,7 @@ def repository_create():
 def _create_repository(ctx, repo_type, **kwargs) -> None:
     # every repository recipe needs these
     kwargs['recipe'] = ctx.info_name
-    util.upcase_values(
-        kwargs, ['index_type', 'layout_policy', 'version_policy', 'write_policy'])
+    util.upcase_values(kwargs, ['index_type', 'layout_policy', 'version_policy', 'write_policy'])
 
     # these CLI options were shortened for user convenience; fix them now
     util.rename_keys(kwargs, {
@@ -519,3 +516,60 @@ def security_realm_active(ctx: click.Context):
 def security_realm_available(ctx: click.Context, **kwargs):
     """List available security realms."""
     subcommand_realm.cmd_available(ctx.obj, **kwargs)
+
+
+#############################################################################
+# blobstore sub-commands
+@nexus_cli.group(cls=util.AliasedGroup)
+def blobstore():
+    """Blob store operations."""
+    pass
+
+
+@blobstore.command(name='list')
+@click.option('--json/--no-json', default=False, help='Print output as json')
+@util.with_nexus_client
+def blobstore_list(ctx: click.Context, **kwargs):
+    """List all blob stores."""
+    subcommand_blobstore.cmd_list(ctx.obj, **kwargs)
+
+
+@blobstore.command(name='show')
+@click.argument('name')
+@util.with_nexus_client
+def blobstore_show(ctx: click.Context, name):
+    """Show the details for NAME as JSON."""
+    subcommand_blobstore.cmd_show(ctx.obj, name)
+
+
+@blobstore.command(name='delete')
+@click.argument('name')
+@click.confirmation_option()
+@util.with_nexus_client
+def blobstore_delete(ctx: click.Context, name):
+    """Delete blob store NAME"""
+    subcommand_blobstore.cmd_delete(ctx.obj, name)
+
+
+@blobstore.group(cls=util.AliasedGroup, name='create')
+def blobstore_create():
+    """Create a new Blobstore."""
+    pass
+
+
+@blobstore_create.command(name='file')
+@util.add_options(blobstore_options.COMMON)
+@click.argument('path')
+@util.with_nexus_client
+def blobstore_create_file(ctx: click.Context, name, path, **kwargs):
+    """Create NAME blob store of type File stored at PATH."""
+    subcommand_blobstore.cmd_create(ctx.obj, 'File', name, path=path, **kwargs)
+
+
+@blobstore_create.command(name='s3')
+@util.add_options(blobstore_options.S3)
+@util.add_options(blobstore_options.COMMON)
+@util.with_nexus_client
+def blobstore_create_s3(ctx: click.Context, name, **kwargs):
+    """Create NAME blob store of type S3."""
+    subcommand_blobstore.cmd_create(ctx.obj, 'S3', name, **kwargs)

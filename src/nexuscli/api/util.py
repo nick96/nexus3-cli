@@ -77,7 +77,9 @@ def validate_response(response: requests.Response,
     if response.status_code not in accepted_codes:
         message = response.text
         try:
-            message = response.json()[0]['message']
+            nexus_messages = response.json()
+            error_messages = [f'{x["id"]} {x["message"]}' for x in nexus_messages]
+            message = '\n'.join(error_messages)
         except (IndexError, KeyError, TypeError, json.JSONDecodeError):
             pass
         raise exc_class(message)

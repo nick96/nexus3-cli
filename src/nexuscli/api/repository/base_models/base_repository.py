@@ -26,8 +26,6 @@ class BaseRepository(BaseModel):
     """If a recipe is not given during initialisation, use this one as the default"""
 
     def __init__(self, *args, **kwargs):
-        self.name: str = kwargs['name']
-
         self.blob_store_name: str = kwargs.get('blob_store_name', DEFAULT_BLOB_STORE_NAME)
         self.strict_content: bool = kwargs.get(
             'strict_content_type_validation', DEFAULT_STRICT_CONTENT)

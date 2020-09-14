@@ -1,4 +1,5 @@
 from nexuscli import exception, nexus_util
+from nexuscli.api import util
 from nexuscli.api.base_collection import BaseCollection
 from nexuscli.api.base_model import BaseModel
 
@@ -42,11 +43,7 @@ class ScriptCollection(BaseCollection):
             raise exception.NexusClientAPIError(resp.content)
 
     def raw_list(self):
-        resp = self._http.get('script')
-        if resp.status_code != 200:
-            raise exception.NexusClientAPIError(resp.content)
-
-        return resp.json()
+        return self._service_get('script')
 
     def create_if_missing(self, name, content=None, script_type='groovy'):
         """
@@ -90,8 +87,7 @@ class ScriptCollection(BaseCollection):
         }
 
         resp = self._http.post('script', json=script)
-        if resp.status_code != 204:
-            raise exception.NexusClientAPIError(resp.content)
+        util.validate_response(resp, 204)
 
     def run(self, *args, **kwargs):
         """See :py:meth:`run_script` """
@@ -107,8 +103,7 @@ class ScriptCollection(BaseCollection):
         """
         endpoint = f'script/{script_name}'
         resp = self._http.delete(endpoint)
-        if resp.status_code != 204:
-            raise exception.NexusClientAPIError(resp.reason)
+        util.validate_response(resp, 204)
 
 
 # TODO: describe script and use/return from collection methods

@@ -16,11 +16,7 @@ class TaskCollection(BaseCollection):
         other than 200.
         """
         # TODO: handle pagination
-        resp = self._http.get('tasks')
-        if resp.status_code != 200:
-            raise exception.NexusClientAPIError(resp.content)
-
-        return resp.json()
+        return self._service_get('tasks')
 
     @util.with_min_version('3.12.1')
     def show(self, task_id: str) -> dict:
@@ -34,8 +30,7 @@ class TaskCollection(BaseCollection):
         if resp.status_code == 404:
             raise exception.NotFound(task_id)
 
-        if resp.status_code != 200:
-            raise exception.NexusClientAPIError(resp.content)
+        util.validate_response(resp, 200)
 
         return resp.json()
 
@@ -48,16 +43,13 @@ class TaskCollection(BaseCollection):
         """
         resp = self._http.post(f'tasks/{task_id}/run')
 
-        # TODO: think about handling results/raising exceptions somewhere else. Maybe use status
-        # codes and messages from service/rest/swagger.json
         if resp.status_code == 404:
             raise exception.NotFound(task_id)
 
         if resp.status_code == 405:
             raise exception.TaskDisabled(task_id)
 
-        if resp.status_code != 204:
-            raise exception.NexusClientAPIError(resp.content)
+        util.validate_response(resp, 204)
 
     @util.with_min_version('3.12.1')
     def stop(self, task_id: str) -> None:
@@ -74,5 +66,4 @@ class TaskCollection(BaseCollection):
         if resp.status_code == 409:
             raise exception.NexusClientAPIError('Unable to stop task')
 
-        if resp.status_code != 204:
-            raise exception.NexusClientAPIError(resp.content)
+        util.validate_response(resp, 204)

@@ -1,7 +1,6 @@
 import json
 from typing import List, Optional
 
-from nexuscli import exception
 from nexuscli.api import util
 from nexuscli.api.base_collection import BaseCollection
 from nexuscli.api.security.realms.model import Realm
@@ -63,7 +62,6 @@ class RealmCollection(BaseCollection):
         resp = self._http.put(
             'security/realms/active', service_url=service_url, headers=headers, data=data)
 
-        if resp.status_code != 204:
-            raise exception.NexusClientAPIError(resp.content)
+        util.validate_response(resp, 204)
 
         self.reset()

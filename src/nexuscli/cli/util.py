@@ -22,8 +22,7 @@ class AliasedGroup(click.Group):
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv
-        matches = [x for x in self.list_commands(ctx)
-                   if x.startswith(cmd_name)]
+        matches = [x for x in self.list_commands(ctx) if x.startswith(cmd_name)]
         if not matches:
             return None
         if len(matches) == 1:
@@ -146,12 +145,9 @@ def print_as_table(contents: List[Dict], fields: List) -> None:
     :param fields: list of key names in contents elements to be added as columns to table
     """
     table = Texttable(max_width=constants.TTY_MAX_WIDTH)
-    table.add_row([x.title() for x in fields])
-    table.set_deco(Texttable.HEADER | Texttable.HLINES)
-    for item in contents:
-        row = []
-        for field in fields:
-            row.append(item[field])
-        table.add_row(row)
+    table.set_deco(Texttable.HEADER)
+    table.set_header_align(['l'] * len(fields))
+    table.header([x.title() for x in fields])
+    table.add_rows([[item[x] for x in fields] for item in contents], header=False)
 
     print(table.draw())

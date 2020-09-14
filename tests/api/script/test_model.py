@@ -35,8 +35,6 @@ def test_list_error(script_collection):
     with pytest.raises(exception.NexusClientAPIError):
         _ = script_collection.list
 
-    script_collection._http.get.assert_called_with('script')
-
 
 def test_list(script_collection):
     """Ensure the method returns the expected value on success"""

@@ -241,11 +241,7 @@ class RepositoryCollection(BaseCollection):
             dict: for the format, see `List Repositories
             <https://help.sonatype.com/repomanager3/rest-and-integration-api/repositories-api#RepositoriesAPI-ListRepositories>`_.
         """
-        response = self._http.get('repositories')
-        if response.status_code != 200:
-            raise exception.NexusClientAPIError(response.content)
-
-        return response.json()
+        return self._service_get('repositories')
 
     def delete(self, name):
         """
@@ -301,5 +297,4 @@ class RepositoryCollection(BaseCollection):
         else:
             resp = self._http.delete(endpoint, service_url=service_url)
 
-        if resp.status_code != 204:
-            raise exception.NexusClientAPIError(resp.content)
+        util.validate_response(resp, 204)

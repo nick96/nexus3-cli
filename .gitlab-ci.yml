@@ -92,7 +92,7 @@ unit-py3.8:
     # get nexus going since it takes a little while to start-up
     - docker run -d --rm -p 8081:8081 -v $(pwd)/tests/fixtures/nexus-data/etc:/nexus-data/etc --name nexus sonatype/nexus3:$NEXUS_VERSION
     # test dependencies
-    - apk add bash curl py3-pip python3-dev gcc musl-dev linux-headers openssl-dev libffi-dev
+    - apk add bash curl py3-pip python3-dev gcc musl-dev linux-headers openssl-dev libffi-dev rust cargo
     - export CFLAGS=-I/usr/include
     - pip3 install dist/nexus3_cli*.whl
     # don't use --upgrade; we want to test the package as installed above

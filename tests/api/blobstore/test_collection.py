@@ -15,7 +15,8 @@ def test_get_by_name(blobstore_collection):
     b = blobstore_collection.get_by_name('default')
 
     assert isinstance(b, Blobstore)
-    assert b.configuration == x_configuration
+    for key, value in x_configuration.items():
+        assert b.configuration[key] == value
 
 
 @pytest.mark.integration
@@ -40,7 +41,8 @@ class TestBlobstore:
         blobstore_collection.create(blobstore)
         remote_blobstore = blobstore_collection.get_by_name(self.name)
 
-        assert remote_blobstore.configuration == blobstore.configuration
+        for key, value in blobstore.configuration.items():
+            assert remote_blobstore.configuration[key] == value
 
     def test_delete(self, blobstore_collection):
         blobstore_collection.delete(self.name)

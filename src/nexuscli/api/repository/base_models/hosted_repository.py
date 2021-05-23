@@ -1,6 +1,8 @@
 from nexuscli.api import validations
 from nexuscli.api.repository.base_models import Repository
 
+from urllib.parse import urljoin
+
 DEFAULT_WRITE_POLICY = 'ALLOW'
 
 
@@ -28,6 +30,10 @@ class HostedRepository(Repository):
     def _validate_params(self):
         super()._validate_params()
         validations.ensure_known('write_policy', self.write_policy, self.WRITE_POLICIES)
+
+    @property
+    def _url(self):
+        return urljoin(self._client.config.url, f'repository/{self.name}')
 
     @property
     def configuration(self):

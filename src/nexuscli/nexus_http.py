@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 import requests
 import semver
+import warnings
 
 from nexuscli import exception
 from nexuscli.nexus_config import NexusConfig
@@ -105,7 +106,8 @@ class NexusHttp:
                 maybe_semver = server.split(' ')[0].split('/')[1].split('-')[0]
                 version = semver.VersionInfo.parse(maybe_semver)
             except (IndexError, ValueError):
-                return None
+                warnings.warn(f'Nexus server version cannot be parsed: {server}')
+                version = None
 
             self._server_version = version
         return self._server_version

@@ -47,6 +47,9 @@ def with_min_version(min_version: str) -> Callable[[F], F]:
         # be explicit that args[0] is `self` in the context of the calling class instance
         def wrapper(collection: 'nexuscli.api.base_collection.BaseCollection', *args, **kwargs):
             try:
+                if collection._http.server_version is None:
+                    raise ValueError('server_version is None')
+
                 min_semver = semver.VersionInfo.parse(min_version)
             except ValueError:
                 warnings.warn(

@@ -40,6 +40,22 @@ def test_list(repo_name, cli_runner, faker):
     assert result.output == ''
 
 
+@pytest.mark.parametrize('aliases', ['li', 'lis', 'ls'])
+def test_list_aliases(aliases, cli_runner, mocker, nexus_mock_client):
+    # TODO: move this somewhere else
+    class AnyArg(object):
+        def __eq__(a, b):
+            return True
+
+    xrepo = 'maven-snapshots/'
+    root_commands = mocker.patch('nexuscli.cli.root_commands')
+
+    cli_runner.invoke(nexus_cli, f'{aliases} {xrepo}', catch_exceptions=False)
+
+    root_commands.cmd_list.assert_called_once()
+    root_commands.cmd_list.assert_called_with(AnyArg(), xrepo)
+
+
 # TODO: upload to all repository types
 @pytest.mark.integration
 def test_upload(cli_runner, upload_repo, faker):

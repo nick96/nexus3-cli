@@ -3,6 +3,7 @@ import functools
 import os
 import sys
 from typing import Dict, List, Optional
+from click_aliases import ClickAliasedGroup
 
 from nexuscli import exception
 from nexuscli.cli import constants
@@ -11,7 +12,7 @@ from nexuscli.nexus_config import NexusConfig
 from texttable import Texttable
 
 
-class AliasedGroup(click.Group):
+class AliasedGroup(ClickAliasedGroup):
     """
     Implements execution of the first partial match for a command. Fails with a
     message if there are no unique matches.
@@ -19,14 +20,14 @@ class AliasedGroup(click.Group):
     See: https://click.palletsprojects.com/en/7.x/advanced/#command-aliases
     """
     def get_command(self, ctx, cmd_name):
-        rv = click.Group.get_command(self, ctx, cmd_name)
+        rv = ClickAliasedGroup.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv
         matches = [x for x in self.list_commands(ctx) if x.startswith(cmd_name)]
         if not matches:
             return None
         if len(matches) == 1:
-            return click.Group.get_command(self, ctx, matches[0])
+            return ClickAliasedGroup.get_command(self, ctx, matches[0])
         ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
 
 

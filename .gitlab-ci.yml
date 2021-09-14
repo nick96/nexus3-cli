@@ -54,6 +54,7 @@ mypy:
   artifacts: {}
   script:
     - pip install mypy
+    - python -m pip install types-requests types-setuptools
     - mypy src
 #
 package:

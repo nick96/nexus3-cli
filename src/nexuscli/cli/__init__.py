@@ -45,7 +45,7 @@ def login(**kwargs):
     root_commands.cmd_login(**kwargs)
 
 
-@nexus_cli.command(name='list')
+@nexus_cli.command(name='list', aliases=['ls'])
 @click.argument('repository_path')
 @util.with_nexus_client
 def list_(ctx: click.Context, repository_path):

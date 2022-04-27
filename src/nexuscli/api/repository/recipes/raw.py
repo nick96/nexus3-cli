@@ -3,7 +3,7 @@ from nexuscli.api.repository.base_models import Repository
 from nexuscli.api.repository.base_models import GroupRepository
 from nexuscli.api.repository.base_models import HostedRepository
 from nexuscli.api.repository.base_models import ProxyRepository
-
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 __all__ = ['RawHostedRepository', 'RawProxyRepository', 'RawGroupRepository']
 
 
@@ -29,14 +29,16 @@ class RawHostedRepository(_RawRepository, HostedRepository):
         destination, dst_file = nexus_util.get_dst_path_and_file(source, destination)
 
         params = {'repository': self.name}
-        files = {'raw.asset1': open(source, 'rb').read()}
-        data = {
-            'raw.directory': destination,
-            'raw.asset1.filename': dst_file,
-        }
-
+        data = MultipartEncoder(
+            fields={
+                'raw.directory': (None, destination),
+                'raw.asset1': (str(source), open(source, 'rb')),
+                'raw.asset1.filename': (None, dst_file),
+            }
+        )
+        headers = {'Content-Type': data.content_type}
         response = self._client.post(
-            'components', files=files, data=data, params=params, stream=True)
+            'components', data=data, params=params, headers=headers, stream=True)
 
         if response.status_code != 204:
             raise exception.NexusClientAPIError(

@@ -19,7 +19,6 @@ def upload_file_ensure_raises_api_error(tmpdir, faker, nexus_mock_client):
         nexus_mock_client.http.request.return_value.status_code = 500
         # TODO: use the file_upload_args fixture
         src_file = tmpdir.join(faker.file_name()).ensure()
-
         with pytest.raises(exception.NexusClientAPIError):
             repository.upload_file(src_file, faker.file_path())
 

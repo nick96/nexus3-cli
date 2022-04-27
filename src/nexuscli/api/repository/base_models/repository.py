@@ -166,7 +166,6 @@ class Repository(base_repository.BaseRepository):
         repository_path = f'{self.name}{nexus_util.REMOTE_PATH_SEPARATOR}{repository_path}'
         repo, directory, filename = nexus_util.split_component_path(repository_path)
         path_filter = ''  # matches everything
-        partial_match = True
 
         if directory is not None:
             path_filter = directory
@@ -176,16 +175,15 @@ class Repository(base_repository.BaseRepository):
                 path_filter += nexus_util.REMOTE_PATH_SEPARATOR
 
         if filename is not None:
-            partial_match = False
             # The artefact path is always relative to the given repo.
             path_filter += filename
 
-        list_gen = self._list_raw_search(path_filter, partial_match)
+        list_gen = self._list_raw_search(path_filter)
 
         for artefact in list_gen:
             yield artefact
 
-    def _list_raw_search(self, path_filter: str, partial_match: bool) -> Iterator[Dict]:
+    def _list_raw_search(self, path_filter: str) -> Iterator[Dict]:
         # TODO: use `group` attribute in raw repositories to speed-up queries
         query = {
             'repository': self.name,
@@ -194,11 +192,7 @@ class Repository(base_repository.BaseRepository):
         if path_filter:
             query['keyword'] = f'"{path_filter}"'  # hacky as fuck :(
 
-        raw_response = self._get_paginated('search/assets', params=query)
-
-        # TODO: maybe this filter is no longer needed due to keyword use ^
-        return nexus_util.filtered_list_gen(
-            raw_response, term=path_filter, partial_match=partial_match)
+        return self._get_paginated('search/assets', params=query)
 
     def _get_paginated(self, endpoint: str, **request_kwargs) -> Iterator[Dict]:
         """

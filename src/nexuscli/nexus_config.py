@@ -14,6 +14,7 @@ DEFAULTS = {
     'password': '',
     'url': 'http://localhost:8081',
     'x509_verify': True,
+    'groovy_enabled': True,
 }
 
 
@@ -34,6 +35,7 @@ class NexusConfig:
         config_path (str): local file containing configuration above in JSON
             format with these keys: ``nexus_url``, ``nexus_user``,
             ``nexus_pass`` and ``nexus_verify``.
+        groovy_enabled (bool): toggle use of groovy scripts.
     """
     def __init__(self,
                  username=DEFAULTS['username'],
@@ -41,7 +43,8 @@ class NexusConfig:
                  url=DEFAULTS['url'],
                  x509_verify=DEFAULTS['x509_verify'],
                  api_version=DEFAULTS['api_version'],
-                 config_path=None):
+                 config_path=None,
+                 groovy_enabled=DEFAULTS['groovy_enabled']):
 
         self._api_version = api_version
         self._username = username
@@ -51,6 +54,7 @@ class NexusConfig:
             self._url += '/'
         self._x509_verify = x509_verify
         self._config_path = Path(config_path or DEFAULT_CONFIG)
+        self._groovy_enabled = groovy_enabled
 
     @property
     def to_dict(self):
@@ -100,6 +104,15 @@ class NexusConfig:
         :rtype: str
         """
         return self._x509_verify
+
+    @property
+    def groovy_enabled(self):
+        """
+        Whether the use of Nexus Groovy scripts is allowed
+
+        :rtype: bool
+        """
+        return self._groovy_enabled
 
     @property
     def config_path(self) -> Path:

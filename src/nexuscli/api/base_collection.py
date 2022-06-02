@@ -40,6 +40,10 @@ class BaseCollection:
         if self._http is None:
             raise ValueError('Instance has no client')
 
+        if not self._http.config.groovy_enabled:
+            raise exception.FeatureNotImplemented(
+                f'Unable to run {script_name}: groovy_enabled is False')
+
         headers = {'content-type': 'text/plain'}
         endpoint = f'script/{script_name}/run'
         resp = self._http.post(endpoint, headers=headers, data=data)

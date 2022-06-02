@@ -39,6 +39,7 @@ def cli_runner_env(monkeypatch):
 
     # TODO: any better spot to do this bool/str cast?
     config['NEXUS3_X509_VERIFY'] = str(config['NEXUS3_X509_VERIFY'])
+    config['NEXUS3_GROOVY_ENABLED'] = str(config['NEXUS3_GROOVY_ENABLED'])
 
     return CliRunner(env=config)
 

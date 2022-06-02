@@ -39,6 +39,15 @@ pip install nexus3-cli
 There's also a [docker image with nexus3-cli 
 pre-installed](https://gitlab.com/thiagocsf/docker-nexus3-cli).
 
+### Enable Groovy scripts
+
+Some of the functionality in this client was written before the Nexus REST API 
+exposed the necessary endpoints. For this reason, you may need to enable Groovy
+script execution in your instance.
+
+See the [FAQ in this blog post](https://support.sonatype.com/hc/en-us/articles/360045220393-Scripting-Nexus-Repository-Manager-3)
+and the [example `nexus.properties`](https://gitlab.com/thiagocsf/nexus3-cli/-/blob/master/tests/fixtures/nexus-data/etc/nexus.properties) in this project.
+
 ## Usage
 
 ### Command line

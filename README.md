@@ -48,6 +48,11 @@ script execution in your instance.
 See the [FAQ in this blog post](https://support.sonatype.com/hc/en-us/articles/360045220393-Scripting-Nexus-Repository-Manager-3)
 and the [example `nexus.properties`](https://gitlab.com/thiagocsf/nexus3-cli/-/blob/master/tests/fixtures/nexus-data/etc/nexus.properties) in this project.
 
+If you decide to leave groovy scripts disabled in your Nexus 3 instance, you need to disable its
+use in this client. This can be done by editing the `~/.nexus-cli` configuration and changing
+`groovy_enabled` to `false`. Alternatively, you can export the `NEXUS3_GROOVY_ENABLED=false`
+environment variable.
+
 ## Usage
 
 ### Command line

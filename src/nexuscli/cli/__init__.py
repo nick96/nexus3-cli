@@ -184,7 +184,9 @@ def repository_create_group():
 
 @repository_create_group.command(name='recipe')  # type: ignore
 @util.add_options(repository_options.COMMON)
-@click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group')
+@click.option('--member-names', '-m', multiple=True, help='Repository name(s) to add to group. '
+                                                          'Use once per member. E.g.: `-m name-a '
+                                                          '-m name-b`.')
 @util.with_nexus_client
 def repository_create_group_recipe(ctx: click.Context, **kwargs):
     """Create group repository NAME."""

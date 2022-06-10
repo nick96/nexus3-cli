@@ -92,7 +92,7 @@ class NexusHttp:
         :rtype: Union[None,semver.VersionInfo]
         """
         if self._server_version is None:
-            response = self.get('/')
+            response = self.get('', service_url=self.config.url)
 
             if response.status_code != 200:
                 raise exception.NexusClientAPIError(response.reason)
